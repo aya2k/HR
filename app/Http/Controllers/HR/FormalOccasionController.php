@@ -5,6 +5,7 @@ namespace App\Http\Controllers\HR;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\FormalOccasion;
+use App\Traits\ApiResponder;
 
 class FormalOccasionController extends Controller
 {

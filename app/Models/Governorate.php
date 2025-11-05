@@ -8,12 +8,17 @@ use App\Traits\HasLocalization;
 
 class Governorate extends Model
 {
-   use HasFactory,HasLocalization;
+    use HasFactory, HasLocalization;
 
-    protected $fillable = ['name_ar', 'name_en'];
+    protected $fillable = ['country_id', 'name_ar', 'name_en'];
 
     public function cities()
     {
-        return $this->hasMany(City::class);
+        return $this->hasMany(City::class ,'governorate_id');
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
     }
 }

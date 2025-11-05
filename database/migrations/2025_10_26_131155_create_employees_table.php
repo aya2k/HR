@@ -15,16 +15,13 @@ return new class extends Migration
             $table->id();
              $table->foreignId('applicant_id')->nullable()->constrained()->nullOnDelete();
             $table->string('code')->unique();
-            $table->foreignId('position_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('manager_id')->nullable()->references('id')->on('employees')->nullOnDelete();
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('company_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('shift_id')->nullable()->constrained()->nullOnDelete();
+            
 
             // Employment
-            $table->enum('employment_type', ['full_time','part_time','contract','internship'])->default('full_time');
-            $table->enum('work_mode', ['on_site','remote','hybrid'])->default('on_site');
             $table->json('hybrid_schedule')->nullable();
             $table->date('join_date')->nullable();
             $table->date('end_date')->nullable();
@@ -45,24 +42,9 @@ return new class extends Migration
             $table->decimal('kpi', 5, 2)->default(0);
             $table->enum('salary_method', ['cash','bank','wallet'])->default('cash');
             $table->boolean('has_fixed_salary')->default(true);
-
-            // Work details
-            $table->integer('permission_hours')->default(0);
-            $table->integer('work_hours')->default(8);
-            $table->integer('holiday_balance')->default(0);
-            $table->boolean('friday_off')->default(false);
-            $table->json('holidays')->nullable();
-            $table->boolean('uniform')->default(false);
-            $table->string('expected_work_period')->nullable();
-            $table->boolean('has_laptop')->default(false);
-            $table->text('overtime_reason')->nullable();
-
-            // Social links
-            // $table->string('facebook_link')->nullable();
-            // $table->string('linkedin_link')->nullable();
-
-            // Tracking
             $table->integer('num_of_call_system')->default(0);
+            $table->boolean('is_manager')->default(false);
+            $table->boolean('is_sales')->default(false);
             $table->timestamps();
         });
     }

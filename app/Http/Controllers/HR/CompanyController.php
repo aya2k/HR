@@ -5,39 +5,31 @@ namespace App\Http\Controllers\HR;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Company;
+use App\Http\Requests\Company\StoreCompanyRequest;
+use App\Traits\ApiResponder;
+use App\Http\Resources\Company\CompanyResource;
+use App\Http\Requests\Company\UpdateCompanyRequest;
 
 class CompanyController extends Controller
 {
-     public function index()
+    use ApiResponder;
+
+    public function index()
     {
-        $companies = Company::latest()->get();
-        return response()->json([
-            'status' => true,
-            'data' => $companies
-        ], 200);
+        $companies = Company::all();
+        return CompanyResource::collection($companies);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreCompanyRequest $request)
     {
-        $validated = $request->validate([
-            'name_ar' => 'required|string|max:255',
-            'name_en' => 'required|string|max:255',
-            'address_ar' => 'nullable|string|max:255',
-            'address_en' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
+        $company = Company::create($request->validated());
+
+        return $this->respondResource(new CompanyResource($company), [
+            'message' => 'Created successfully'
         ]);
-
-        $company = Company::create($validated);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Company created successfully ✅',
-            'data' => $company
-        ], 201);
     }
 
     /**
@@ -45,33 +37,22 @@ class CompanyController extends Controller
      */
     public function show(Company $company)
     {
-        return response()->json([
-            'status' => true,
-            'data' => $company
-        ], 200);
+        return $this->respondResource(new CompanyResource($company));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Company $company)
+    public function update(UpdateCompanyRequest $request, Company $company)
     {
-        $validated = $request->validate([
-            'name_ar' => 'sometimes|string|max:255',
-            'name_en' => 'sometimes|string|max:255',
-            'address_ar' => 'nullable|string|max:255',
-            'address_en' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-        ]);
+        $validated = $request->validate([]);
 
         $company->update($validated);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Company updated successfully ✅',
-            'data' => $company
-        ], 200);
+
+        return $this->respondResource(new CompanyResource($company), [
+            'message' => 'Updated successfully'
+        ]);
     }
 
     /**

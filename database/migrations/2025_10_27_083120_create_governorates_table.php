@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('governorates', function (Blueprint $table) {
             $table->id();
-            $table->string('name_ar');
-            $table->string('name_en')->nullable();
+            $table->foreignId('country_id')->constrained()->cascadeOnDelete();
+            $table->string('name_ar')->nullable();
+            $table->string('name_en');
             $table->timestamps();
         });
     }

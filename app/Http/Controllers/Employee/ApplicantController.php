@@ -16,7 +16,9 @@ class ApplicantController extends Controller
     {
         $request->validate([
             'cv' => 'required|file|mimes:pdf,doc,docx|max:4096',
+            'certificates.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:4096',
         ]);
+
 
         $path = $request->file('cv')->store('cvs', 'public');
 
@@ -53,6 +55,14 @@ class ApplicantController extends Controller
             ];
         })->toArray();
 
+
+        $certificatesPaths = [];
+        if ($request->hasFile('certificates')) {
+            foreach ($request->file('certificates') as $file) {
+                $certificatesPaths[] = $file->store('applicants/certificates', 'public');
+            }
+        }
+
         // 🎯 نرجع البيانات فقط بدون إنشاء سجل فعلي
         return response()->json([
             'message' => 'CV parsed successfully ✅',
@@ -66,9 +76,9 @@ class ApplicantController extends Controller
                 'faculty' => $education[0]['accreditation']['education'] ?? '',
                 'university' => $education[0]['organization'] ?? '',
                 'gpa' => $education[0]['grade']['value'] ?? '',
-                'start_year' => isset($education[0]['dates']['startDate']) 
+                'start_year' => isset($education[0]['dates']['startDate'])
                     ? Carbon::parse($education[0]['dates']['startDate'])->format('Y') : '',
-                'graduation_year' => isset($education[0]['dates']['endDate']) 
+                'graduation_year' => isset($education[0]['dates']['endDate'])
                     ? Carbon::parse($education[0]['dates']['endDate'])->format('Y') : '',
                 'courses' => $courses,
                 'previous_jobs' => $workExperience,
@@ -76,6 +86,7 @@ class ApplicantController extends Controller
                 'linkedin_link' => $resume['links']['linkedin'] ?? '',
                 'github_link' => $resume['links']['github'] ?? '',
                 'cv' => $path,
+                'certificates' => $certificatesPaths,
             ]
         ]);
     }

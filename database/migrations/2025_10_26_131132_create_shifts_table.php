@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('shifts', function (Blueprint $table) {
             $table->id();
-            $table->string('name_ar');
-            $table->string('name_en')->nullable();
+            $table->string('name_ar')->nullable();
+            $table->string('name_en');
             $table->time('start_time');
             $table->time('end_time');
             $table->integer('break_minutes')->default(0);

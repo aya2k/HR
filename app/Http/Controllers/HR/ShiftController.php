@@ -5,6 +5,7 @@ namespace App\Http\Controllers\HR;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Shift;
+use App\Traits\ApiResponder;
 
 class ShiftController extends Controller
 {
@@ -18,7 +19,7 @@ class ShiftController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name_ar' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
             'name_en' => 'nullable|string|max:255',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',

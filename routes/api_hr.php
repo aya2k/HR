@@ -11,28 +11,36 @@ use App\Http\Controllers\HR\GovernorateController;
 use App\Http\Controllers\HR\CityController;
 use App\Http\Controllers\HR\FormalOccasionController;
 use App\Http\Controllers\HR\EmployeeController;
+use App\Http\Controllers\HR\SettingController;
+use App\Http\Controllers\HR\LocationController;
+
+Route::middleware(['throttle:10,1'])->group(function () {
+
+    Route::apiResource('companies', CompanyController::class);  //done
+    Route::apiResource('branches', BranchController::class);  //done
+    
+    Route::apiResource('positions', PositionController::class);  //done
+    Route::apiResource('shifts', ShiftController::class);
+    Route::get('countries', [LocationController::class, 'countries']);  //done
+    Route::get('countries/{country}/governorates', [LocationController::class, 'governorates']);  //done
+   // Route::get('governorates/{governorate}/cities', [LocationController::class, 'cities']);
+
+    Route::apiResource('formal-occasions', FormalOccasionController::class);
+  //  Route::post('applicants/{id}/hire', [EmployeeController::class, 'storeFullApplication']);
 
 
 
-Route::apiResource('companies', CompanyController::class);
-Route::apiResource('branches', BranchController::class);
-Route::apiResource('departments', DepartmentController::class);
-Route::apiResource('positions', PositionController::class);
-Route::apiResource('shifts', ShiftController::class);
-Route::apiResource('governorates', GovernorateController::class);
-Route::apiResource('cities', CityController::class);
-Route::apiResource('formal-occasions', FormalOccasionController::class); 
-Route::post('applicants/{id}/hire', [EmployeeController::class, 'hireApplicant']);
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeController::class, 'index']);                                 //done
+        Route::get('{id}', [EmployeeController::class, 'show']);                                //done
+        Route::post('/', [EmployeeController::class, 'store']);       //add employee            //done
+        Route::put('{id}', [EmployeeController::class, 'update']);                              //done
+        Route::delete('{id}', [EmployeeController::class, 'destroy']);                          //done
 
 
 
-Route::prefix('employees')->group(function () {
-    Route::get('/', [EmployeeController::class, 'index']);       
-    Route::get('{id}', [EmployeeController::class, 'show']);      
-    Route::post('/', [EmployeeController::class, 'store']);     
-    Route::put('{id}', [EmployeeController::class, 'update']);    
-    Route::delete('{id}', [EmployeeController::class, 'destroy']); 
+        Route::get('/settings', [SettingController::class, 'index']);
+        Route::post('/settings', [SettingController::class, 'store']);
+        Route::delete('/settings', [SettingController::class, 'destroy']);
+    });
 });
-
-
-

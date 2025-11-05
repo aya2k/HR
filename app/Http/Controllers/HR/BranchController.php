@@ -5,9 +5,14 @@ namespace App\Http\Controllers\HR;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Branch;
+use App\Traits\ApiResponder;
+use App\Http\Resources\Branch\BranchResource;
+use App\Http\Requests\Branch\UpdateBranchRequest;
+use App\Http\Requests\Branch\StoreBranchRequest;
 
 class BranchController extends Controller
 {
+      use ApiResponder;
     /**
      * Display a listing of the resource.
      */
@@ -20,25 +25,19 @@ class BranchController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreBranchRequest $request)
     {
-         $validated = $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'name_ar' => 'required|string|max:255',
-            'name_en' => 'required|string|max:255',
-            'address_ar' => 'nullable|string|max:255',
-            'address_en' => 'nullable|string|max:255',
-            'city_ar' => 'nullable|string|max:255',
-            'city_en' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-        ]);
+        
 
-        $branch = Branch::create($validated);
-
+        $branch = Branch::create($request->validated());
         return response()->json([
             'message' => 'Branch created successfully ✅',
             'branch' => $branch
         ], 201);
+
+         return $this->respondResource(new BranchResource($branch), [
+            'message' => 'Created successfully'
+        ]);
     }
 
     /**
@@ -52,24 +51,14 @@ class BranchController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Branch $branch)
+    public function update(UpdateBranchRequest $request, Branch $branch)
     {
-         $validated = $request->validate([
-            'company_id' => 'nullable|exists:companies,id',
-            'name_ar' => 'nullable|string|max:255',
-            'name_en' => 'nullable|string|max:255',
-            'address_ar' => 'nullable|string|max:255',
-            'address_en' => 'nullable|string|max:255',
-            'city_ar' => 'nullable|string|max:255',
-            'city_en' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-        ]);
+        
 
-        $branch->update($validated);
+       $branch->update($request->validated());
 
-        return response()->json([
-            'message' => 'Branch updated successfully ✅',
-            'branch' => $branch
+         return $this->respondResource(new BranchResource($branch), [
+            'message' => 'Updated successfully'
         ]);
     }
 

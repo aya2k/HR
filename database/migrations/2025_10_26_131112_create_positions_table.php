@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('positions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('department_id')->constrained()->cascadeOnDelete();
-            $table->string('title_ar');
+            $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
+            $table->string('title_ar')->nullable();
             $table->string('title_en');
             $table->text('description_ar')->nullable();
             $table->text('description_en')->nullable();

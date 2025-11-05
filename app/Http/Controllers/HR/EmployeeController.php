@@ -7,54 +7,44 @@ use Illuminate\Http\Request;
 use App\Models\Applicant;
 use App\Models\Employee;
 use Illuminate\Support\Str;
+use App\Traits\ApiResponder;
+
+use App\Http\Resources\Employee\EmployeeResource;
+use App\Http\Requests\Employee\UpdateEmployeeRequest;
+use App\Http\Requests\Employee\StoreEmployeeRequest;
 
 class EmployeeController extends Controller
 {
-     public function hireApplicant(Request $request, $id)
+    public function store(StoreEmployeeRequest $request)
     {
-        $applicant = Applicant::findOrFail($id);
 
-        // 🧩 تحديث بيانات الـ Applicant (اختياري)
-        $applicant->update($request->only([
-            'first_name',
-            'second_name',
-            'last_name',
-            'email',
-            'phone',
-            'gender',
-            'birth_date',
-            'marital_status',
-            'governorate_id',
-            'city_id',
-            'address_details',
-            'expected_salary',
-        ]));
 
-        // ✅ إنشاء موظف جديد من المتقدم
-        $employee = Employee::create([
-            'applicant_id'       => $applicant->id,
-            'code'               => 'EMP-' . Str::upper(Str::random(6)),
-            'position_id'        => $request->position_id,
-            'department_id'      => $request->department_id,
-            'branch_id'          => $request->branch_id,
-            'company_id'         => $request->company_id,
-            'shift_id'           => $request->shift_id,
-            'employment_type'    => $request->employment_type ?? 'full_time',
-            'work_mode'          => $request->work_mode ?? 'on_site',
-            'join_date'          => $request->join_date,
-            'base_salary'        => $request->base_salary ?? $applicant->expected_salary ?? 0,
-            'status'             => 'active',
-        ]);
+        $data = collect($request->validated())->except(['educations', 'experiences', 'skills', 'languages'])->toArray();
 
-        // 🔄 تحديث حالة الـ Applicant إلى "accepted"
-        $applicant->update(['status' => 'accepted']);
+        $applicant = Applicant::create($data);
+
+        foreach (['cv', 'image', 'certification_attatchment'] as $fileField) {
+            if ($request->hasFile($fileField)) {
+                $applicant->$fileField = $request->file($fileField)->store($fileField . 's', 'public');
+            }
+        }
+        $applicant->save();
+
+        foreach (['educations', 'experiences', 'skills', 'languages'] as $relation) {
+            if ($request->has($relation)) {
+                foreach ($request->$relation as $item) {
+                    $applicant->$relation()->create($item);
+                }
+            }
+        }
 
         return response()->json([
-            'message' => 'Applicant hired successfully 🎉',
-            'employee' => $employee,
-            'applicant' => $applicant,
-        ]);
+            'status' => true,
+            'message' => 'Application submitted successfully 🎉',
+            'data' => new EmployeeResource($applicant->load(['educations', 'experiences', 'skills', 'languages']))
+        ], 201);
     }
+
 
 
 
@@ -74,33 +64,7 @@ class EmployeeController extends Controller
         return response()->json($employee);
     }
 
-    // 🟢 إنشاء موظف جديد
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'applicant_id' => 'nullable|exists:applicants,id',
-            'position_id' => 'nullable|exists:positions,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'branch_id' => 'nullable|exists:branches,id',
-            'company_id' => 'nullable|exists:companies,id',
-            'shift_id' => 'nullable|exists:shifts,id',
-            'join_date' => 'nullable|date',
-            'base_salary' => 'nullable|numeric',
-        ]);
-
-        $employee = Employee::create(array_merge($validated, [
-            'code' => 'EMP-' . strtoupper(Str::random(6)),
-            'status' => $request->status ?? 'active',
-            'employment_type' => $request->employment_type ?? 'full_time',
-            'work_mode' => $request->work_mode ?? 'on_site',
-            'base_salary' => $request->base_salary ?? 0,
-        ]));
-
-        return response()->json([
-            'message' => 'Employee created successfully ✅',
-            'employee' => $employee
-        ], 201);
-    }
+    
 
     // 🟢 تعديل بيانات الموظف
     public function update(Request $request, $id)
@@ -144,6 +108,4 @@ class EmployeeController extends Controller
 
         return response()->json(['message' => 'Employee deleted successfully 🗑️']);
     }
-
-   
 }

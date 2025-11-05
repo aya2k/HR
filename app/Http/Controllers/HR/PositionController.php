@@ -5,64 +5,44 @@ namespace App\Http\Controllers\HR;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Position;
+use App\Traits\ApiResponder;
+use App\Http\Requests\Position\PositionRequest;
+use App\Http\Resources\Position\PositionResource;
 
 class PositionController extends Controller
 {
-    public function index()
+    use ApiResponder;
+
+   public function index()
     {
-        $positions = Position::with('department')->latest()->get();
-        return response()->json($positions);
+        $positions = Position::with('branch')->latest()->paginate(10);
+        return PositionResource::collection($positions);
     }
 
-    // إنشاء وظيفة جديدة
-    public function store(Request $request)
+  
+    public function store(PositionRequest $request)
     {
-        $validated = $request->validate([
-            'department_id' => 'required|exists:departments,id',
-            'title_ar' => 'required|string|max:255',
-            'title_en' => 'required|string|max:255',
-            'description_ar' => 'nullable|string',
-            'description_en' => 'nullable|string',
-        ]);
-
-        $position = Position::create($validated);
-
-        return response()->json([
-            'message' => 'Position created successfully ✅',
-            'position' => $position->load('department')
-        ], 201);
+        $position = Position::create($request->validated());
+        return new PositionResource($position);
     }
 
-    // عرض وظيفة محددة
+  
     public function show(Position $position)
     {
-        return response()->json($position->load('department'));
+        return new PositionResource($position->load('branch'));
     }
 
-    // تحديث وظيفة
-    public function update(Request $request, Position $position)
+   
+    public function update(PositionRequest $request, Position $position)
     {
-        $validated = $request->validate([
-            'department_id' => 'nullable|exists:departments,id',
-            'title_ar' => 'nullable|string|max:255',
-            'title_en' => 'nullable|string|max:255',
-            'description_ar' => 'nullable|string',
-            'description_en' => 'nullable|string',
-        ]);
-
-        $position->update($validated);
-
-        return response()->json([
-            'message' => 'Position updated successfully ✅',
-            'position' => $position->load('department')
-        ]);
+        $position->update($request->validated());
+        return new PositionResource($position);
     }
 
-    // حذف وظيفة
+   
     public function destroy(Position $position)
     {
         $position->delete();
-
-        return response()->json(['message' => 'Position deleted successfully 🗑️']);
+        return response()->json(['message' => 'Position deleted successfully']);
     }
 }

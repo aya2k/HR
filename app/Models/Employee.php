@@ -8,11 +8,11 @@ use App\Traits\HasLocalization;
 
 class Employee extends Model
 {
-     use HasFactory ,HasLocalization;
+    use HasFactory, HasLocalization;
 
     protected $guarded = [];
 
-        public function applicant()
+    public function applicant()
     {
         return $this->belongsTo(Applicant::class);
     }
@@ -42,5 +42,8 @@ class Employee extends Model
         return $this->belongsTo(Shift::class);
     }
 
-
+    public function experiences()
+    {
+        return $this->hasManyThrough(Experience::class, Applicant::class, 'id', 'applicant_id', 'applicant_id', 'id');
+    }
 }

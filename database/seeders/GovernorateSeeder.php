@@ -6,25 +6,33 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use App\Models\Governorate;
 
 class GovernorateSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    public function run()
     {
-        $json = File::get(database_path('seeders/data/governorates.json'));
-        $governorates = json_decode($json, true)['data'];
-
-        foreach ($governorates as $gov) {
-            DB::table('governorates')->insert([
-                'id' => $gov['id'],
-                'governorate_name_ar' => $gov['governorate_name_ar'],
-                'governorate_name_en' => $gov['governorate_name_en'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        $path = database_path('seeders/data/governorates.json');
+        $governorates = json_decode(File::get($path), true);
+           $tableData = collect($governorates)->firstWhere('type', 'table');
+        foreach ($tableData['data'] as $gov) {
+            Governorate::updateOrCreate(
+                ['id' => $gov['id']],
+                [
+                    'country_id' => $gov['country_id'],
+                    'name_en' => $gov['name'],
+                    'name_ar' => $gov['name'],
+                ]
+            );
         }
+
+
+        
+
+        
+
     }
 }

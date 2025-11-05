@@ -11,7 +11,7 @@ class Position extends Model
     use HasFactory,HasLocalization;
 
     protected $fillable = [
-        'department_id',
+        'branch_id',
         'title_ar',
         'title_en',
         'description_ar',
@@ -19,8 +19,8 @@ class Position extends Model
     ];
 
     
-    public function department()
+    public function branch()
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(Branch::class);
     }
 }
