@@ -15,10 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('device_id')->constrained()->cascadeOnDelete();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->string('enroll_id'); // رقم المستخدم على الجهاز
-            $table->unique(['device_id', 'enroll_id']);
-            $table->unique(['device_id', 'employee_id']);
+            $table->string('device_user_code'); // Code/UID داخل الجهاز
+            $table->string('badge_no')->nullable();
+            $table->string('privilege')->nullable();   // normal/admin
+            $table->timestamp('enrolled_at')->nullable();
             $table->timestamps();
+
+            $table->unique(['device_id', 'device_user_code']);
+            $table->index(['employee_id', 'device_id']);
         });
     }
 

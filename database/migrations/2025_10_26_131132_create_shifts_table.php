@@ -15,9 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('name_ar')->nullable();
             $table->string('name_en');
-            $table->time('start_time');
-            $table->time('end_time');
-            $table->integer('break_minutes')->default(0);
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+            $table->unsignedSmallInteger('break_minutes')->default(0);
+            $table->unsignedSmallInteger('duration')->default(8);
+
             $table->timestamps();
         });
     }

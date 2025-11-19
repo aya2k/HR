@@ -13,19 +13,34 @@ return new class extends Migration
     {
         Schema::create('attendance_days', function (Blueprint $table) {
             $table->id();
+
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->date('date');
-            $table->unsignedInteger('work_minutes_raw')->default(0);
-            $table->unsignedInteger('permission_minutes_unpaid')->default(0);
-            $table->unsignedInteger('late_minutes')->default(0);
-            $table->unsignedInteger('late_minutes_weighted')->default(0); // بعد المضاعف
-            $table->unsignedInteger('early_leave_minutes')->default(0);
-            $table->unsignedInteger('overtime_minutes')->default(0);
-            $table->boolean('is_holiday')->default(false);
-            $table->enum('state', ['ok', 'incomplete', 'absent', 'leave', 'mission'])->default('ok');
-            $table->json('notes')->nullable();
-            $table->unique(['employee_id', 'date']);
+            $table->date('work_date');                    // تاريخ اليوم (حسب branch TZ)
+            $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
+
+            // من الشيفت/السياسة
+            $table->unsignedSmallInteger('required_minutes')->default(0);
+            $table->unsignedSmallInteger('break_minutes')->default(0);    // ثابته أو من السياسة
+
+            // من واقع البصمات المحسوبة
+            $table->timestamp('first_in_at')->nullable();   // UTC
+            $table->timestamp('last_out_at')->nullable();   // UTC
+            $table->unsignedSmallInteger('worked_minutes')->default(0);
+            $table->unsignedSmallInteger('overtime_minutes')->default(0);
+            $table->unsignedSmallInteger('deficit_minutes')->default(0);
+            $table->unsignedSmallInteger('late_minutes')->default(0);
+            $table->unsignedSmallInteger('early_leave_minutes')->default(0);
+            $table->unsignedSmallInteger('punches_count')->default(0);
+
+            // الحالة النهائية
+            $table->enum('day_type', ['workday', 'weekend', 'holiday', 'leave', 'permission', 'absent'])->default('workday');
+            $table->enum('status', ['complete', 'partial', 'absent', 'excused'])->default('partial');
+
+            $table->json('components')->nullable(); // تفصيل الخصومات/الزيادات
             $table->timestamps();
+
+            $table->unique(['employee_id', 'work_date']);
+            $table->index(['branch_id', 'work_date']);
         });
     }
 

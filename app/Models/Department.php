@@ -15,5 +15,27 @@ class Department extends Model
         'name_en',
         'description_ar',
         'description_en',
+         'phones',
     ];
+
+    protected $casts = [
+    'phones' => 'array',
+];
+
+
+     public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    // الموظفين التابعين للقسم
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
+    }
+
+    public function manager()
+    {
+        return $this->hasOne(Employee::class)->where('is_department_manager', true);
+    }
 }

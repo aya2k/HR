@@ -15,41 +15,17 @@ return new class extends Migration
             $table->id();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->date('date');
-            $table->time('from_time');
-            $table->time('to_time');
-            $table->boolean('is_paid')->default(false);
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('approved');
-            $table->text('reason')->nullable();
-            $table->timestamps();
-        });
+            $table->time('from_time')->nullable();
+            $table->time('to_time')->nullable();
+            $table->unsignedSmallInteger('minutes')->default(0);
+            $table->string('reason')->nullable();
 
-        Schema::create('leaves', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', ['annual', 'sick', 'casual', 'unpaid', 'other']);
-            $table->date('from_date');
-            $table->date('to_date');
-            $table->boolean('is_paid')->default(true);
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('approved');
-            $table->text('note')->nullable();
+            $table->enum('type', ['personal', 'official', 'mission'])->default('personal');
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->foreignId('approved_by')->nullable()->constrained(table: 'users')->nullOnDelete();
             $table->timestamps();
-        });
-        Schema::create('missions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->date('date');
-            $table->time('from_time');
-            $table->time('to_time');
-            $table->string('place')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('approved');
-            $table->timestamps();
-        });
-        Schema::create('holidays', function (Blueprint $table) {
-            $table->id();
-            $table->date('date');
-            $table->string('name');
-            $table->boolean('is_national')->default(true);
-            $table->timestamps();
+
+            $table->index(['employee_id', 'date', 'status']);
         });
     }
 
@@ -58,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists(['permissions','leaves','missions','holidays']);
+        Schema::dropIfExists(['permissions']);
     }
 };

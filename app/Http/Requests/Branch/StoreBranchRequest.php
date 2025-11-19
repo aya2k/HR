@@ -21,12 +21,14 @@ class StoreBranchRequest extends FormRequest
      */
     public function rules(): array
     {
-       return [
+        return [
             'company_id' => 'required|exists:companies,id',
             'name_en'    => 'required|string|max:255',
             'address_en' => 'nullable|string|max:255',
             'city_en'    => 'nullable|string|max:255',
-            'phone'      => 'nullable|string|max:20',
+            'phones' => 'nullable|array',
+            'phones.*' => 'string|max:20',
+
         ];
     }
 

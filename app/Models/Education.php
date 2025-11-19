@@ -11,6 +11,8 @@ class Education extends Model
 {
    use HasFactory, HasLocalization;
 
+   protected $table ='educations';
+
     protected $guarded = [];
 
 

@@ -17,8 +17,12 @@ return new class extends Migration
             $table->string('name_en');
             $table->string('address_ar')->nullable();
             $table->string('address_en')->nullable();
-            $table->string('phone')->nullable();
+          $table->json('phones')->nullable();
+
             $table->string('email')->nullable();
+            $table->foreignId('attendance_policy_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('payroll_policy_id')->nullable()->constrained()->nullOnDelete();
+
             $table->timestamps();
         });
     }

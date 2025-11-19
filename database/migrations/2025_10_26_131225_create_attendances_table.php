@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->date('date');
-            $table->time('check_in_time')->nullable();
-            $table->time('check_out_time')->nullable();
+            $table->time('check_in')->nullable();
+            $table->time('check_out')->nullable();
             $table->decimal('total_hours', 5, 2)->nullable();
+            $table->decimal('overtime_minutes', 5, 2)->nullable();
+            $table->decimal('late_minutes', 5, 2)->nullable();
+
             $table->json('location_in')->nullable();
             $table->json('location_out')->nullable();
             $table->boolean('fingerprint_verified')->default(false);

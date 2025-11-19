@@ -16,6 +16,7 @@ class Shift extends Model
         'start_time',
         'end_time',
         'break_minutes',
+        'duration'
     ];
 
    
@@ -25,5 +26,10 @@ class Shift extends Model
         $end = strtotime($this->end_time);
         $hours = ($end - $start) / 3600;
         return max($hours - ($this->break_minutes / 60), 0);
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
     }
 }

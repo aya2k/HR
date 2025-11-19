@@ -13,16 +13,15 @@ return new class extends Migration
     {
         Schema::create('attendance_raw_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('device_id')->constrained()->cascadeOnDelete();
-            $table->string('enroll_id');
-            $table->timestamp('verified_at');
-            $table->enum('io', ['IN', 'OUT'])->nullable();
-            $table->string('method')->nullable(); // Finger/Face/Card
-            $table->string('sn')->nullable();
-            $table->json('payload')->nullable();
-            $table->unique(['device_id', 'enroll_id', 'verified_at']);
-            $table->index(['verified_at']);
+            $table->foreignId('device_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('device_user_code')->nullable();
+            $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
+            $table->timestamp('punched_at'); // UTC
+            $table->string('event_type')->nullable(); // verify/in/out/door-open...
+            $table->json('payload')->nullable();      // raw JSON from device
             $table->timestamps();
+
+            $table->index(['device_id', 'punched_at']);
         });
     }
 

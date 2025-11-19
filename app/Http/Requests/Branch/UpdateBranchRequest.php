@@ -23,13 +23,13 @@ class UpdateBranchRequest extends FormRequest
     {
         return [
             'company_id' => 'nullable|exists:companies,id',
-            'name_ar' => 'nullable|string|max:255',
+
             'name_en' => 'nullable|string|max:255',
-            'address_ar' => 'nullable|string|max:255',
             'address_en' => 'nullable|string|max:255',
-            'city_ar' => 'nullable|string|max:255',
             'city_en' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
+            'phones' => 'nullable|array',
+            'phones.*' => 'string|max:20',
+
         ];
     }
 

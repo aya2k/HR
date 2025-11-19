@@ -20,7 +20,8 @@ return new class extends Migration
             $table->string('address_en')->nullable();
             $table->string('city_ar')->nullable();
             $table->string('city_en')->nullable();
-            $table->string('phone')->nullable();
+          $table->json('phones')->nullable();
+
             $table->timestamps();
         });
     }

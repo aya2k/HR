@@ -19,11 +19,12 @@ class ShiftController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name_ar' => 'nullable|string|max:255',
+            
             'name_en' => 'nullable|string|max:255',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
             'break_minutes' => 'nullable|integer|min:0',
+            'duration' => 'nullable|integer|min:0',
         ]);
 
         $shift = Shift::create($validated);
@@ -49,6 +50,7 @@ class ShiftController extends Controller
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
             'break_minutes' => 'nullable|integer|min:0',
+             'duration' => 'nullable|integer|min:0',
         ]);
 
         $shift->update($validated);

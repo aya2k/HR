@@ -13,23 +13,14 @@ return new class extends Migration
     {
         Schema::create('payroll_runs', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); 
             $table->date('period_start');
             $table->date('period_end');
-            $table->enum('status', ['draft', 'approved', 'paid'])->default('draft');
+            $table->enum('status', ['draft', 'locked', 'posted'])->default('draft');
+            $table->timestamp('processed_at')->nullable();
+            $table->json('totals')->nullable();
             $table->timestamps();
-        });
 
-        Schema::create('payroll_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('payroll_run_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
-            $table->decimal('base_salary', 10, 2)->default(0);
-            $table->decimal('overtime_amount', 10, 2)->default(0);
-            $table->decimal('deductions_amount', 10, 2)->default(0);
-            $table->decimal('net_amount', 10, 2)->default(0);
-            $table->json('breakdown')->nullable();
-            $table->timestamps();
+            $table->unique(['period_start', 'period_end']);
         });
     }
 
@@ -38,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists(['payroll_runs','payroll_items']);
+        Schema::dropIfExists(['payroll_runs']);
     }
 };

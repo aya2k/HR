@@ -21,14 +21,14 @@ return new class extends Migration
             $table->enum('work_setup', ['onsite', 'remote', 'hybrid'])->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
-            $table->boolean('is_current')->default(false);
+            $table->boolean('is_current')->nullable();
             $table->decimal('salary', 12, 2)->nullable();
             $table->string('manager_name')->nullable();
             $table->string('manager_phone')->nullable();
             $table->string('manager_email')->nullable();
             $table->boolean('okay_to_contact')->default(false);
             $table->text('key_responsibilities')->nullable();      
-
+             $table->timestamps();
 
         });
     }

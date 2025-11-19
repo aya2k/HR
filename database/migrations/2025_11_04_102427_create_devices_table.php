@@ -13,16 +13,21 @@ return new class extends Migration
     {
         Schema::create('devices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
-            $table->string('model')->nullable(); // ZKT ECO
+            $table->string('vendor')->nullable();      // e.g., ZKTeco
+            $table->string('model')->nullable();
+            $table->string('serial')->nullable()->unique();
             $table->string('ip')->nullable();
-            $table->unsignedInteger('port')->default(4370);
-            $table->string('serial')->nullable();
-            $table->enum('mode', ['pull', 'push', 'zkbiotime'])->default('pull');
-            $table->json('config')->nullable(); // مفاتيح/ADMS/…إلخ
-            $table->boolean('is_active')->default(true);
+            $table->unsignedInteger('port')->nullable();
+            $table->string('timezone')->default('Africa/Cairo');
+            $table->enum('mode', ['pull', 'push'])->default('pull');
+            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->timestamp('last_sync_at')->nullable();
+            $table->json('config')->nullable();
             $table->timestamps();
+
+            $table->index(['branch_id', 'status']);
         });
     }
 

@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('educations', function (Blueprint $table) {
             $table->id();
-             $table->foreignId('applicant_id')->constrained()->cascadeOnDelete();
-              $table->string('degree_level')->nullable()->change();
+            $table->foreignId('applicant_id')->constrained()->cascadeOnDelete();
+            $table->string('degree_level')->nullable();
             $table->string('field_of_study')->nullable();
             $table->string('institution')->nullable();
-            $table->string('institution_country')->nullable(); 
+            $table->string('institution_country')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->string('education_attatchment')->nullable();

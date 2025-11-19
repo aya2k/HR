@@ -8,7 +8,7 @@ use App\Traits\HasLocalization;
 
 class Branch extends Model
 {
-    use HasFactory ,HasLocalization;
+    use HasFactory, HasLocalization;
 
     protected $fillable = [
         'company_id',
@@ -18,11 +18,28 @@ class Branch extends Model
         'address_en',
         'city_ar',
         'city_en',
-        'phone',
+         'phones',
     ];
+
+    protected $casts = [
+    'phones' => 'array',
+];
+
 
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    // Employees in this branch
+    public function employees()
+    {
+        return $this->belongsToMany(Employee::class)->withTimestamps();
+    }
+
+    // Branch manager(s)
+    public function managers()
+    {
+        return $this->employees()->where('is_manager', true);
     }
 }

@@ -40,6 +40,16 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'user-api' => [
+            'driver' => 'jwt',
+            'provider' => 'users',
+        ],
+
+        'hr-api' => [
+            'driver' => 'jwt',
+            'provider' => 'hrs',
+        ],
     ],
 
     /*
@@ -61,14 +71,14 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
-        ],
+        'driver' => 'eloquent',
+        'model' => App\Models\User::class,
+    ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+    'hrs' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Hr::class,
+    ],
     ],
 
     /*

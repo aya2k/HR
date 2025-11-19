@@ -23,23 +23,24 @@ return new class extends Migration
             $table->string('whatsapp_number')->nullable();
             $table->date('birth_date');
 
-            $table->string('country_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('country_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('governorate_id')->nullable()->constrained()->onDelete('set null');
             $table->string('city')->nullable();
 
             $table->enum('marital_status', ['single', 'married', 'divorced', 'widowed'])->nullable();
             $table->enum('gender', ['male', 'female'])->nullable();
-            $table->enum('military_service', ['completed', 'exempted', 'postponed', 'not_required'])->nullable(); 
+            $table->enum('military_service', ['completed', 'exempted', 'postponed', 'not_required'])->nullable();
             $table->string('image')->nullable();
-    
+
             $table->foreignId('position_applied_for_id')->nullable()->constrained()->onDelete('set null');
-          
-            $table->string('employment_type')->nullable();  //foring key from shifts
-            $table->enum('work_setup', ['onsite', 'remote', 'hybrid'])->nullable()->change();     
+            $table->foreignId('employment_type_id')->nullable()->constrained()->onDelete('set null');
+
+            // $table->string('employment_type')->nullable();  
+            $table->enum('work_setup', ['onsite', 'remote', 'hybrid'])->nullable();
             $table->date('available_start_date')->nullable();
             $table->decimal('expected_salary', 10, 2)->nullable();
             $table->string('how_did_you_hear_about_this_role')->nullable();
-           
+
             //Education
             $table->string('certification_attatchment')->nullable();
             $table->string('facebook_link')->nullable();
@@ -49,8 +50,6 @@ return new class extends Migration
             $table->string('cv')->nullable();
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             $table->text('cover_letter')->nullable();
-            
-            
             $table->timestamps();
         });
     }

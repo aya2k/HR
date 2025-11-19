@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('payroll_policies', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->enum('compensation_type', ['fixed', 'hourly', 'commission', 'mixed'])->default('fixed');
-            $table->decimal('overtime_rate_multiplier', 4, 2)->default(1.25); // 125% مثلاً
-            $table->decimal('holiday_work_multiplier', 4, 2)->default(2.00);
-            $table->enum('deduction_mode', ['per_minute', 'tiers'])->default('per_minute');
+            $table->string('name')->default('Default Payroll Policy');
+            $table->decimal('hour_rate', 10, 2)->default(0);
+            $table->decimal('overtime_rate', 10, 2)->default(1.25);   // multiplier
+            $table->decimal('weekend_ot_rate', 10, 2)->default(1.5);
+            $table->decimal('holiday_ot_rate', 10, 2)->default(2.0);
+            $table->boolean('deduct_deficit')->default(true);
+            $table->unsignedSmallInteger('round_to_minutes')->default(1);
+            $table->json('components')->nullable(); 
             $table->timestamps();
         });
     }

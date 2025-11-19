@@ -8,7 +8,7 @@ use App\Traits\HasLocalization;
 
 class Position extends Model
 {
-    use HasFactory,HasLocalization;
+    use HasFactory, HasLocalization;
 
     protected $fillable = [
         'branch_id',
@@ -18,9 +18,14 @@ class Position extends Model
         'description_en',
     ];
 
-    
+
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
     }
 }

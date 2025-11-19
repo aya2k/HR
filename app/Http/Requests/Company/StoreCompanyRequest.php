@@ -22,14 +22,14 @@ class StoreCompanyRequest extends FormRequest
     public function rules(): array
     {
         return [
-          
+
             'name_en' => 'required|string|max:255',
             'address_en' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phones' => 'nullable|array',
+            'phones.*' => 'string|max:20',
+
             'email' => 'nullable|email|max:255',
         ];
-
-
     }
 
     public function messages()
@@ -37,7 +37,7 @@ class StoreCompanyRequest extends FormRequest
         return [
             'name_en.required' => 'Company name is required.',
             'email.email' => 'Please enter a valid email address.',
-           
+
         ];
     }
 }

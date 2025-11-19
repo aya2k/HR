@@ -13,34 +13,209 @@ use App\Http\Controllers\HR\FormalOccasionController;
 use App\Http\Controllers\HR\EmployeeController;
 use App\Http\Controllers\HR\SettingController;
 use App\Http\Controllers\HR\LocationController;
+use App\Http\Controllers\HR\HeadMangerController;
+use App\Http\Controllers\HR\AttendanceController;
+use App\Http\Controllers\HR\AttendancePolicyController;
+use App\Http\Controllers\HR\PayrollPolicyController;
+use App\Http\Controllers\HR\AuthController;
+use App\Http\Controllers\HR\MonthlyAttendanceController;
+use App\Http\Controllers\HR\Sheets\AbsentSheetController;
+use App\Http\Controllers\HR\Sheets\OverTimeSheetController;
+use App\Http\Controllers\HR\Sheets\IncompleteShiftSheetController;
+use App\Http\Controllers\HR\Sheets\AttendanceSheetController;
+use App\Http\Middleware\CheckPermission;
+use App\Http\Controllers\HR\HrController;
+use App\Http\Controllers\HR\PermissionController;
+use App\Http\Controllers\HR\EmployeeProfileController;
 
-Route::middleware(['throttle:10,1'])->group(function () {
 
-    Route::apiResource('companies', CompanyController::class);  //done
-    Route::apiResource('branches', BranchController::class);  //done
+
+// HR Authentication Routes
+Route::prefix('hr')->group(function () {
+    Route::post('login', [AuthController::class, 'login']);
+
+    // Protected HR routes
+    Route::middleware(['auth:hr-api'])->group(function () {
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+
+
+        Route::middleware(['throttle:10,1'])->group(function () {
+
+            // Companies
+            Route::apiResource('companies', CompanyController::class)
+                ->middleware([
+                    'index' => 'permission:view_companies',
+                    'store' => 'permission:add_company',
+                    'update' => 'permission:edit_company',
+                    'destroy' => 'permission:delete_company',
+                ]);
+
+            // Branches
+            Route::apiResource('branches', BranchController::class)
+                ->middleware([
+                    'index' => 'permission:view_branches',
+                    'store' => 'permission:add_branch',
+                    'update' => 'permission:edit_branch',
+                    'destroy' => 'permission:delete_branch',
+                ]);
+
+            // Positions
+            Route::apiResource('positions', PositionController::class)
+                ->middleware([
+                    'index' => 'permission:view_positions',
+                    'store' => 'permission:add_position',
+                    'update' => 'permission:edit_position',
+                    'destroy' => 'permission:delete_position',
+                ]);
+
+            // Shifts
+            Route::apiResource('shifts', ShiftController::class)
+                ->middleware([
+                    'index' => 'permission:view_shifts',
+                    'store' => 'permission:add_shift',
+                    'update' => 'permission:edit_shift',
+                    'destroy' => 'permission:delete_shift',
+                ]);
+
+            // Departments
+            Route::apiResource('departments', DepartmentController::class)
+                ->middleware([
+                    'index' => 'permission:view_departments',
+                    'store' => 'permission:add_department',
+                    'update' => 'permission:edit_department',
+                    'destroy' => 'permission:delete_department',
+                ]);
+
+            // Locations
+            Route::get('countries', [LocationController::class, 'countries'])
+                ;
+            Route::get('countries/{country}/governorates', [LocationController::class, 'governorates'])
+                ;
+
+            // Formal occasions
+            Route::apiResource('formal-occasions', FormalOccasionController::class)
+                ->middleware([
+                    'index' => 'permission:view_formal_occasions',
+                    'store' => 'permission:add_formal_occasion',
+                    'update' => 'permission:edit_formal_occasion',
+                    'destroy' => 'permission:delete_formal_occasion',
+                ]);
+ Route::get('/list', [EmployeeController::class, 'simpleList']);
+            // Employees
+            Route::prefix('employees')->group(function () {
+                Route::get('/', [EmployeeController::class, 'index'])
+                    ->middleware('permission:view_employees');
+                Route::get('{id}', [EmployeeController::class, 'show'])
+                    ->middleware('permission:view_employee');
+                Route::post('/', [EmployeeController::class, 'store'])
+                    ->middleware('permission:add_employee');
+                Route::put('{id}', [EmployeeController::class, 'update'])
+                    ->middleware('permission:edit_employee');
+                Route::delete('{id}', [EmployeeController::class, 'destroy'])
+                    ->middleware('permission:delete_employee');
+                Route::post('/export-data', [EmployeeController::class, 'exportData'])
+                    ->middleware('permission:export_employee_data');
+              
     
-    Route::apiResource('positions', PositionController::class);  //done
-    Route::apiResource('shifts', ShiftController::class);
-    Route::get('countries', [LocationController::class, 'countries']);  //done
-    Route::get('countries/{country}/governorates', [LocationController::class, 'governorates']);  //done
-   // Route::get('governorates/{governorate}/cities', [LocationController::class, 'cities']);
+            });
 
-    Route::apiResource('formal-occasions', FormalOccasionController::class);
-  //  Route::post('applicants/{id}/hire', [EmployeeController::class, 'storeFullApplication']);
+            // Head Managers
+            Route::get('/head-managers', [HeadMangerController::class, 'getManagers'])
+               ;
+            Route::post('/{id}/head-managers', [HeadMangerController::class, 'addAsManager'])
+                ->middleware('permission:add_head_manager');
+
+            // Attendance & Policies
+            Route::apiResource('attendances', AttendanceController::class)
+                ->middleware([
+                    'index' => 'permission:view_attendances',
+                    'store' => 'permission:add_attendance',
+                    'update' => 'permission:edit_attendance',
+                    'destroy' => 'permission:delete_attendance',
+                ]);
+
+            Route::apiResource('attendance-policies', AttendancePolicyController::class)
+                ->middleware([
+                    'index' => 'permission:view_attendance_policies',
+                    'store' => 'permission:add_attendance_policy',
+                    'update' => 'permission:edit_attendance_policy',
+                    'destroy' => 'permission:delete_attendance_policy',
+                ]);
+
+            Route::get('{Id}/monthly-report/{month}', [AttendanceController::class, 'getMonhlyReport'])
+                ->middleware('permission:view_monthly_report');
+            Route::get('/monthly-report/{month}', [MonthlyAttendanceController::class, 'getMonthlyReportAll'])
+                ->middleware('permission:view_monthly_report_all');
+            Route::get('/monthly-report-pdf', [MonthlyAttendanceController::class, 'exportMonthlyReportAllPdf'])
+                ->middleware('permission:export_monthly_report_pdf');
+             Route::get('/daily-report', [MonthlyAttendanceController::class, 'getDailyReport'])
+                ->middleware('permission:getDailyReport');
+
+                Route::get('/header/{day}', [AttendanceController::class, 'header']); 
+                
+
+            // Sheets
+            Route::post('absents', [AbsentSheetController::class, 'index'])
+                ->middleware('permission:view_absent_sheet');
+            Route::get('/absents/export-pdf', [AbsentSheetController::class, 'exportPdf'])
+                ->middleware('permission:export_absent_pdf');
+
+            Route::post('over-time', [OverTimeSheetController::class, 'index'])
+                ->middleware('permission:view_overtime_sheet');
+            Route::patch('/{id}', [OverTimeSheetController::class, 'update'])
+                ->middleware('permission:edit_overtime_sheet');
+            Route::delete('/{id}', [OverTimeSheetController::class, 'delete'])
+                ->middleware('permission:delete_overtime_sheet');
+            Route::get('/over-time-export-pdf', [OverTimeSheetController::class, 'exportPdf'])
+                ->middleware('permission:export_overtime_pdf');
+
+            Route::post('late-time', [IncompleteShiftSheetController::class, 'index'])
+                ->middleware('permission:view_late_sheet');
+            Route::patch('/{id}', [IncompleteShiftSheetController::class, 'update'])
+                ->middleware('permission:edit_late_sheet');
+            Route::delete('/{id}', [IncompleteShiftSheetController::class, 'delete'])
+                ->middleware('permission:delete_late_sheet');
+            Route::get('/late-time-export-pdf', [IncompleteShiftSheetController::class, 'exportPdf'])
+                ->middleware('permission:export_late_pdf');
+
+            Route::post('attendances-sheet', [AttendanceSheetController::class, 'index'])
+                ->middleware('permission:view_attendance_sheet');
+            Route::patch('/{id}', [AttendanceSheetController::class, 'update'])
+                ->middleware('permission:edit_attendance_sheet');
+            Route::delete('/{id}', [AttendanceSheetController::class, 'delete'])
+                ->middleware('permission:delete_attendance_sheet');
+            Route::get('/export-pdf', [AttendanceSheetController::class, 'exportPdf'])
+                ->middleware('permission:export_attendance_pdf');
+
+            // Permissions management
+            Route::get('/permissions', [PermissionController::class, 'index'])
+                ->middleware('permission:view_permissions');
+
+            Route::get('/hrs', [HrController::class, 'index'])
+                ->middleware('permission:view_hr');
+
+            Route::get('/hrs/{id}/permissions', [HrController::class, 'getPermissions'])
+                ->middleware('permission:view_hr_permissions');
+
+            Route::post('/hrs/{id}/permissions', [HrController::class, 'updatePermissions'])
+                ->middleware('permission:update_hr_permissions');
+
+            Route::get('/hrs-with-permissions', [HrController::class, 'listWithPermissions'])
+                ->middleware('permission:view_hr_with_permissions');
+
+              Route::get('/profile/{id}', [EmployeeProfileController::class, 'show']);
+          
 
 
-
-    Route::prefix('employees')->group(function () {
-        Route::get('/', [EmployeeController::class, 'index']);                                 //done
-        Route::get('{id}', [EmployeeController::class, 'show']);                                //done
-        Route::post('/', [EmployeeController::class, 'store']);       //add employee            //done
-        Route::put('{id}', [EmployeeController::class, 'update']);                              //done
-        Route::delete('{id}', [EmployeeController::class, 'destroy']);                          //done
-
-
-
-        Route::get('/settings', [SettingController::class, 'index']);
-        Route::post('/settings', [SettingController::class, 'store']);
-        Route::delete('/settings', [SettingController::class, 'destroy']);
+            // Settings
+            Route::get('/settings', [SettingController::class, 'index'])
+                ->middleware('permission:view_settings');
+            Route::post('/settings', [SettingController::class, 'store'])
+                ->middleware('permission:add_setting');
+            Route::delete('/settings', [SettingController::class, 'destroy'])
+                ->middleware('permission:delete_setting');
+        });
     });
 });

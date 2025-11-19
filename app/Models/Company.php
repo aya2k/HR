@@ -15,7 +15,26 @@ class Company extends Model
         'name_en',
         'address_ar',
         'address_en',
-        'phone',
+        'phones',
         'email',
+        'attendance_policy_id',
+        'payroll_policy_id'
     ];
+
+
+    protected $casts = [
+    'phones' => 'array',
+];
+
+
+    public function attendancePolicy()
+{
+    return $this->belongsTo(AttendancePolicy::class);
+}
+
+public function payrollPolicy()
+{
+    return $this->belongsTo(PayrollPolicy::class);
+}
+
 }
