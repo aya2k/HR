@@ -41,7 +41,7 @@ Route::prefix('hr')->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
 
 
-        Route::middleware(['throttle:10,1'])->group(function () {
+        Route::middleware(['throttle:100,1'])->group(function () {
 
             // Companies
             Route::apiResource('companies', CompanyController::class)
@@ -89,10 +89,8 @@ Route::prefix('hr')->group(function () {
                 ]);
 
             // Locations
-            Route::get('countries', [LocationController::class, 'countries'])
-                ;
-            Route::get('countries/{country}/governorates', [LocationController::class, 'governorates'])
-                ;
+            Route::get('countries', [LocationController::class, 'countries']);
+            Route::get('countries/{country}/governorates', [LocationController::class, 'governorates']);
 
             // Formal occasions
             Route::apiResource('formal-occasions', FormalOccasionController::class)
@@ -102,7 +100,7 @@ Route::prefix('hr')->group(function () {
                     'update' => 'permission:edit_formal_occasion',
                     'destroy' => 'permission:delete_formal_occasion',
                 ]);
- Route::get('/list', [EmployeeController::class, 'simpleList']);
+            Route::get('/list', [EmployeeController::class, 'simpleList']);
             // Employees
             Route::prefix('employees')->group(function () {
                 Route::get('/', [EmployeeController::class, 'index'])
@@ -117,13 +115,10 @@ Route::prefix('hr')->group(function () {
                     ->middleware('permission:delete_employee');
                 Route::post('/export-data', [EmployeeController::class, 'exportData'])
                     ->middleware('permission:export_employee_data');
-              
-    
             });
 
             // Head Managers
-            Route::get('/head-managers', [HeadMangerController::class, 'getManagers'])
-               ;
+            Route::get('/head-managers', [HeadMangerController::class, 'getManagers']);
             Route::post('/{id}/head-managers', [HeadMangerController::class, 'addAsManager'])
                 ->middleware('permission:add_head_manager');
 
@@ -132,9 +127,11 @@ Route::prefix('hr')->group(function () {
                 ->middleware([
                     'index' => 'permission:view_attendances',
                     'store' => 'permission:add_attendance',
-                    'update' => 'permission:edit_attendance',
+
                     'destroy' => 'permission:delete_attendance',
                 ]);
+            Route::patch('/attendances/{employeeId}', [AttendanceController::class, 'update']);
+
 
             Route::apiResource('attendance-policies', AttendancePolicyController::class)
                 ->middleware([
@@ -150,11 +147,11 @@ Route::prefix('hr')->group(function () {
                 ->middleware('permission:view_monthly_report_all');
             Route::get('/monthly-report-pdf', [MonthlyAttendanceController::class, 'exportMonthlyReportAllPdf'])
                 ->middleware('permission:export_monthly_report_pdf');
-             Route::get('/daily-report', [MonthlyAttendanceController::class, 'getDailyReport'])
+            Route::get('/daily-report', [MonthlyAttendanceController::class, 'getDailyReport'])
                 ->middleware('permission:getDailyReport');
 
-                Route::get('/header/{day}', [AttendanceController::class, 'header']); 
-                
+            Route::get('/header/{day}', [AttendanceController::class, 'header']);
+
 
             // Sheets
             Route::post('absents', [AbsentSheetController::class, 'index'])
@@ -205,8 +202,8 @@ Route::prefix('hr')->group(function () {
             Route::get('/hrs-with-permissions', [HrController::class, 'listWithPermissions'])
                 ->middleware('permission:view_hr_with_permissions');
 
-              Route::get('/profile/{id}', [EmployeeProfileController::class, 'show']);
-          
+            Route::get('/personal-data/{id}', [EmployeeProfileController::class, 'PersonalData']);
+            Route::get('/activity/{id}', [EmployeeProfileController::class, 'PersonalActivity']);
 
 
             // Settings

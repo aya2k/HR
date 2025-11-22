@@ -58,7 +58,9 @@ class StoreEmployeeRequest extends FormRequest
             'facebook_link' => 'nullable|url',
             'linkedin_link' => 'nullable|url',
             //  'github_link' => 'nullable|url',
-            'additional_link' => 'nullable|url',
+            'additional_link' => 'nullable|array',
+            'additional_link.*' => 'nullable|url',
+
             'educations' => 'nullable|array',
             'educations.*.degree_level' => 'nullable|string|max:255',
             'educations.*.field_of_study' => 'nullable|string|max:255',

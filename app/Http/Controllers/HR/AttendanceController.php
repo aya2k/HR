@@ -273,4 +273,88 @@ private static function calculateDailyStats($date)
 }
 
 
+
+
+public function update(Request $request, $employeeId)
+{
+    $data = $request->validate([
+        'check_in'  => 'required|date_format:H:i',
+        'check_out' => 'required|date_format:H:i',
+        'date'      => 'nullable|date'
+    ]);
+
+    $tz = 'Africa/Cairo';
+    $workDate = $request->date ?? now($tz)->toDateString();
+
+    // البحث عن حضور الموظف في اليوم المحدد
+    $attendance = Attendance::where('employee_id', $employeeId)
+        ->where('date', $workDate)
+        ->first();
+
+    if (!$attendance) {
+        return response()->json(['error' => 'Attendance not found for this date.'], 404);
+    }
+
+    $employee = Employee::with('shift')->findOrFail($employeeId);
+    $shift = $employee->shift;
+
+    if (!$shift || !$shift->start_time || !$shift->end_time) {
+        return response()->json(['error' => 'Shift times missing.'], 422);
+    }
+
+    // إعداد check-in و check-out
+    $checkIn = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_in']}", $tz);
+    $checkOut = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_out']}", $tz);
+    if ($checkOut->lt($checkIn)) $checkOut->addDay();
+
+    $shiftStart = Carbon::createFromFormat('Y-m-d H:i:s', "{$workDate} {$shift->start_time}", $tz);
+    $shiftEnd   = Carbon::createFromFormat('Y-m-d H:i:s', "{$workDate} {$shift->end_time}", $tz);
+    if ($shiftEnd->lte($shiftStart)) $shiftEnd->addDay();
+
+    $workedMinutes   = $checkIn->diffInMinutes($checkOut);
+    $lateMinutes     = $checkIn->gt($shiftStart) ? $shiftStart->diffInMinutes($checkIn) : 0;
+    $earlyLeave      = max(0, ($shift->duration*60) - $workedMinutes);
+    $overtimeMinutes = max(0, $workedMinutes - ($shift->duration*60));
+
+    $policy = AttendancePolicy::first();
+    $grace = (int)($policy->late_grace_minutes ?? 0);
+    if ($lateMinutes > 0 && $lateMinutes <= $grace) $lateMinutes = 0;
+
+    $deficitMinutes = max(0, ($shift->duration*60) - $workedMinutes);
+
+    DB::transaction(function () use ($attendance, $employee, $checkIn, $checkOut, $workedMinutes, $lateMinutes, $earlyLeave, $overtimeMinutes, $deficitMinutes) {
+        $attendance->update([
+            'check_in'         => $checkIn->format('H:i:s'),
+            'check_out'        => $checkOut->format('H:i:s'),
+            'total_hours'      => round($workedMinutes / 60, 2),
+            'late_minutes'     => $lateMinutes,
+            'overtime_minutes' => $overtimeMinutes,
+            'status'           => 'present',
+        ]);
+
+        AttendanceDay::where('employee_id', $employee->id)
+            ->where('work_date', $attendance->date)
+            ->update([
+                'first_in_at'         => $checkIn,
+                'last_out_at'         => $checkOut,
+                'worked_minutes'      => $workedMinutes,
+                'overtime_minutes'    => $overtimeMinutes,
+                'deficit_minutes'     => $deficitMinutes,
+                'late_minutes'        => $lateMinutes,
+                'early_leave_minutes' => $earlyLeave,
+            ]);
+    });
+
+    return response()->json([
+        'message'             => '✅ Attendance updated successfully',
+        'worked_minutes'      => $workedMinutes,
+        'overtime_minutes'    => $overtimeMinutes,
+        'late_minutes'        => $lateMinutes,
+        'early_leave_minutes' => $earlyLeave,
+    ]);
+}
+
+
+
+
 }

@@ -36,75 +36,89 @@ class AttendanceDay extends Model
         return $this->belongsTo(Shift::class);
     }
 
-    public static function getMonthlySummaryAll($month, $from = null, $to = null, $branch = null, $code = null, $name = null, $phone = null)
-    {
-        $startDate = Carbon::parse($month)->startOfMonth();
-        $endDate   = Carbon::parse($month)->endOfMonth();
+    public static function getMonthlySummaryAll($month, $from = null, $to = null, $branch = null, $keyword = null)
+{
+    $startDate = Carbon::parse($month)->startOfMonth();
+    $endDate   = Carbon::parse($month)->endOfMonth();
 
-        // ضبط التاريخ حسب from/to لو موجودين
-        $fromDate = $from ? Carbon::parse($from)->startOfDay() : $startDate;
-        $toDate   = $to   ? Carbon::parse($to)->endOfDay()   : $endDate;
+    // ضبط التاريخ حسب from/to لو موجودين
+    $fromDate = $from ? Carbon::parse($from)->startOfDay() : $startDate;
+    $toDate   = $to   ? Carbon::parse($to)->endOfDay()   : $endDate;
 
-        // جلب السجلات مع الفلاتر
-        $query = self::whereBetween('work_date', [$fromDate, $toDate]);
+    // جلب السجلات مع الفلاتر
+    $query = self::whereBetween('work_date', [$fromDate, $toDate]);
 
-        if ($branch) {
-            $query->where('branch_id', $branch);
+    if ($branch) {
+        $query->where('branch_id', $branch);
+    }
+
+    $records = $query->get();
+
+    // تجميع حسب الموظف
+    $summary = $records->groupBy('employee_id')->map(function ($employeeRecords, $employeeId) use ($startDate, $keyword) {
+
+        $employee = Employee::with('applicant', 'position')->find($employeeId);
+        if (!$employee) return null;
+
+        // تجهيز الاسم الكامل
+        $fullName = strtolower(
+            ($employee->applicant->first_name ?? '') . ' ' .
+            ($employee->applicant->middle_name ?? '') . ' ' .
+            ($employee->applicant->last_name ?? '')
+        );
+
+        $code  = strtolower($employee->code ?? '');
+        $phone = strtolower($employee->phone ?? '');
+
+        // 🔍 فلتر keyword
+        if ($keyword) {
+            $kw = strtolower($keyword);
+
+            if (
+                !str_contains($fullName, $kw) &&
+                !str_contains($code, $kw) &&
+                !str_contains($phone, $kw)
+            ) {
+                return null; // استبعاد
+            }
         }
 
-        $records = $query->get();
+        // جمع البيانات
+        $presentDays = $employeeRecords->whereNotIn('day_type', ['absent', 'leave'])->count();
+        $absentDays  = $employeeRecords->where('day_type', 'absent')->count();
 
-        // تجميع حسب الموظف
-        $summary = $records->groupBy('employee_id')->map(function ($employeeRecords, $employeeId) use ($startDate, $code, $name, $phone) {
-            $employee = Employee::with('applicant', 'position')->find($employeeId);
+        $totalLate = $employeeRecords->sum(function ($record) {
+            return $record->late_minutes + $record->early_leave_minutes;
+        });
 
-            if (!$employee) return null;
+        $totalOvertime = $employeeRecords->sum('overtime_minutes');
 
-            // فلترة حسب الكود
-            if ($code && !str_contains($employee->code, $code)) return null;
+        $daysWithOvertime = $employeeRecords->where('overtime_minutes', '>', 0)->count();
 
-            // فلترة حسب الاسم
-            $fullName = ($employee->applicant->first_name ?? '') . ' ' .
-                ($employee->applicant->middle_name ?? '') . ' ' .
-                ($employee->applicant->last_name ?? '');
-            if ($name && !str_contains(strtolower($fullName), strtolower($name))) return null;
+        $daysWithIncompleteShift = $employeeRecords->filter(function ($record) {
+            return ($record->late_minutes + $record->early_leave_minutes) > 0;
+        })->count();
 
-            // فلترة حسب الهاتف
-            if ($phone && !str_contains($employee->phone ?? '', $phone)) return null;
+        return [
+            'employee_id' => $employeeId,
+            'employee_code' => $employee->code ?? null,
+            'employee_name' => $fullName,
+            'employee_position' => $employee->position->title_en ?? null,
+            'month' => $startDate->format('Y-m'),
+            'present_days' => $presentDays,
+            'absent_days' => $absentDays,
+            'days_with_incomplete_shifts' => $daysWithIncompleteShift,
+            'total_incomplete_shifts' => $totalLate,
+            'days_with_overtime' => $daysWithOvertime,
+            'total_overtime_minutes' => $totalOvertime,
+        ];
+    })
+    ->filter()  // لحذف null
+    ->values(); // إعادة ترتيب
 
+    return $summary;
+}
 
-            $presentDays = $employeeRecords->whereNotIn('day_type', ['absent', 'leave'])->count();
-            $absentDays  = $employeeRecords->where('day_type', 'absent')->count();
-            $totalLate = $employeeRecords->sum(function ($record) {
-                return $record->late_minutes + $record->early_leave_minutes;
-            });
-
-            $totalOvertime = $employeeRecords->sum('overtime_minutes');
-
-            $daysWithOvertime = $employeeRecords->where('overtime_minutes', '>', 0)->count();
-            $daysWithIncompleteShift = $employeeRecords->filter(function ($record) {
-                return ($record->late_minutes + $record->early_leave_minutes) > 0;
-            })->count();
-
-
-            return [
-                'employee_id' => $employeeId,
-                'employee_code' => $employee->code ?? null,
-                'employee_name' => $fullName,
-                'employee_position' => $employee->position->title_en ?? null,
-                'month' => $startDate->format('Y-m'),
-                'present_days' => $presentDays,
-                'absent_days' => $absentDays,
-                'days_with_incomplete_shifts' => $daysWithIncompleteShift,
-                'total_incomplete_shifts' => $totalLate,
-                'days_with_overtime' => $daysWithOvertime,
-                'total_overtime_minutes' => $totalOvertime,
-
-            ];
-        })->filter()->values(); // filter() لحذف null الناتج عن الفلترة
-
-        return $summary;
-    }
 
 
 
@@ -150,18 +164,25 @@ class AttendanceDay extends Model
 
             return [
                 'id' => $employeeId,
-                'employee'=>[
-                'code' => $employee->code ?? null,
-                'name' => $fullName,
-                'position' => $employee->position->title_en ?? null,
-                'shift' => $employee->shift->name_en ?? null,
+                'employee' => [
+                    'code' => $employee->code ?? null,
+                    'first_name' => $employee->applicant->first_name ?? '',
+                    'middle_name' => $employee->applicant->middle_name ?? '',
+                    'last_name' => $employee->applicant->last_name ?? '',
+                    'name' => $fullName,
+                    'phone' => $employee->phone ?? null,
+                    'position' => $employee->position->title_en ?? null,
+                    'department' => $employee->department->name_en ?? null, // مهم جداً
+                    'shift' => $employee->shift->name_en ?? null,
                 ],
                 'date' => $day,
                 'check_in' => $employeeRecords->min('first_in_at'),
                 'check_out' => $employeeRecords->max('last_out_at'),
                 'worked_minutes' => $employeeRecords->sum('worked_minutes'),
                 'total_overtime' => $totalOvertime,
-                'status' => $status, 
+                'status' => $status,
+                'department' => $employee->department->name_en ?? null,
+
             ];
         })->filter()->values();
 

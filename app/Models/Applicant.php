@@ -16,6 +16,7 @@ class Applicant extends Model
         'skills' => 'array',
         'courses' => 'array',
         'previous_jobs' => 'array',
+         'additional_link' => 'array',
     ];
 
     public function employee()
@@ -36,7 +37,7 @@ class Applicant extends Model
 
     public function skills()
     {
-        return $this->hasMany(Skill::class, 'applicant_id');
+        return $this->hasMany(Skill::class);
     }
     public function languages()
     {

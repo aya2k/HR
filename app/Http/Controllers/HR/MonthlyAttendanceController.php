@@ -15,78 +15,133 @@ use App\Models\AttendanceDay;
 use App\Models\AttendancePolicy;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 
 class MonthlyAttendanceController extends Controller
 {
-   
-   public function getMonthlyReportAll(Request $request)
-{
-    $from   = $request->query('from'); // تاريخ البداية
-    $to     = $request->query('to');   // تاريخ النهاية
-    $branch = $request->query('branch'); 
-    $code   = $request->query('code'); 
-    $name   = $request->query('name'); 
-    $phone  = $request->query('phone'); 
 
-    $month = $request->query('month', now()->format('Y-m')); 
+    public function getMonthlyReportAll(Request $request)
+    {
+        $from   = $request->query('from'); // تاريخ البداية
+        $to     = $request->query('to');   // تاريخ النهاية
+        $branch = $request->query('branch');
+        $keyword = $request->query('keyword');
 
-    $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $code, $name, $phone);
+        $month = $request->query('month', now()->format('Y-m'));
 
-    return response()->json([
-        'status' => true,
-        'data' => $summary,
-    ]);
-}
+        $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $keyword);
 
-
-
-public function exportMonthlyReportAllPdf(Request $request)
-{
-    $from   = $request->query('from');   // تاريخ البداية اختياري
-    $to     = $request->query('to');     // تاريخ النهاية اختياري
-    $branch = $request->query('branch'); // فلتر فرع اختياري
-    $code   = $request->query('code');   // فلتر كود اختياري
-    $name   = $request->query('name');   // فلتر اسم اختياري
-    $phone  = $request->query('phone');  // فلتر هاتف اختياري
-    $month  = $request->query('month', now()->format('Y-m')); // الشهر المطلوب
-
-    // جلب البيانات لجميع الموظفين باستخدام الفانكشن الموجود
-    $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $code, $name, $phone);
-
-    // توليد PDF
-    $pdf = Pdf::loadView('Sheets.monthly_report', [
-        'summary' => $summary,
-        'month'   => $month,
-        'from'    => $from,
-        'to'      => $to,
-    ]);
-
-    return $pdf->download("Monthly_Report_All_{$month}.pdf");
-}
-
-
-public function getDailyReport(Request $request)
-{
-    $day = $request->query('day');
-    if (!$day) {
         return response()->json([
-            'status' => false,
-            'message' => 'day query parameter is required, example: ?day=2025-11-17'
-        ], 400);
+            'status' => true,
+            'data' => $summary,
+        ]);
     }
 
-    $summary = AttendanceDay::getDailySummary($day);
-
-    return response()->json([
-        'status' => true,
-        'date' => $day,
-        'attendances' => $summary,
-    ]);
-}
 
 
+    public function exportMonthlyReportAllPdf(Request $request)
+    {
+        $from   = $request->query('from');   // تاريخ البداية اختياري
+        $to     = $request->query('to');     // تاريخ النهاية اختياري
+        $branch = $request->query('branch'); // فلتر فرع اختياري
+        $code   = $request->query('code');   // فلتر كود اختياري
+        $name   = $request->query('name');   // فلتر اسم اختياري
+        $phone  = $request->query('phone');  // فلتر هاتف اختياري
+        $month  = $request->query('month', now()->format('Y-m')); // الشهر المطلوب
+
+        // جلب البيانات لجميع الموظفين باستخدام الفانكشن الموجود
+        $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $code, $name, $phone);
+
+        // توليد PDF
+        $pdf = Pdf::loadView('Sheets.monthly_report', [
+            'summary' => $summary,
+            'month'   => $month,
+            'from'    => $from,
+            'to'      => $to,
+        ]);
+
+        return $pdf->download("Monthly_Report_All_{$month}.pdf");
+    }
 
 
-    
+
+
+    public function getDailyReport(Request $request)
+    {
+        $day = $request->query('day');
+        if (!$day) {
+            return response()->json([
+                'status' => false,
+                'message' => 'day query parameter is required, example: ?day=2025-11-17'
+            ], 400);
+        }
+
+        $summary = AttendanceDay::getDailySummary($day);
+
+        $collection = collect($summary);
+
+        /*
+     |--------------------------------------
+     | فلتر 1: keyword (name OR phone OR code)
+     |--------------------------------------
+    */
+        if ($request->has('keyword') && !empty($request->keyword)) {
+
+            $keyword = strtolower($request->keyword);
+
+            $collection = $collection->filter(function ($item) use ($keyword) {
+
+                $name  = strtolower($item['employee']['first_name'] ?? '');
+                $code  = strtolower($item['employee']['code'] ?? '');
+                $phone = strtolower($item['employee']['phone'] ?? '');
+
+                return str_contains($name, $keyword)
+                    || str_contains($code, $keyword)
+                    || str_contains($phone, $keyword);
+            });
+        }
+
+        /*
+     |--------------------------------------
+     | فلتر 2: department
+     |--------------------------------------
+    */
+        if ($request->has('department') && !empty($request->department)) {
+
+            $department = strtolower($request->department);
+
+            $collection = $collection->filter(function ($item) use ($department) {
+
+                $dept = strtolower($item['employee']['department'] ?? '');
+
+                return $dept === $department;
+            });
+        }
+
+        /*
+     |--------------------------------------
+     | الـ Pagination اليدوي
+     |--------------------------------------
+    */
+        $page = $request->query('page', 1);
+        $perPage = 10;
+
+        $items = array_values($collection->forPage($page, $perPage)->toArray());
+
+        $paginated = new LengthAwarePaginator(
+            $items,
+            $collection->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json([
+            'status' => true,
+            'date' => $day,
+            'attendances' => $paginated,
+        ]);
+    }
 }

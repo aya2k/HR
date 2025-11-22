@@ -29,10 +29,7 @@ class Employee extends Model
         return $this->belongsTo(Department::class);
     }
 
-    public function skills()
-    {
-        return $this->hasMany(Skill::class, 'applicant_id');
-    }
+    
 
 
 

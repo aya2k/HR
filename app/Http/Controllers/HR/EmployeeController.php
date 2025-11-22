@@ -132,7 +132,8 @@ class EmployeeController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Employee Added successfully 🎉',
-                'data' => new EmployeeResource($applicant)
+                'data' => new EmployeeResource($applicant),
+                
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();

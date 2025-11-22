@@ -11,6 +11,7 @@ use App\Traits\ApiResponder;
 use App\Models\Company;
 use App\Models\Shift;
 use App\Models\Attendance;
+use App\Models\AttendanceDay;
 use App\Http\Resources\Employee\EmployeeProfileResource;
 use App\Http\Requests\Employee\UpdateEmployeeRequest;
 use App\Http\Requests\Employee\StoreEmployeeRequest;
@@ -22,7 +23,7 @@ class EmployeeProfileController extends Controller
     
 
 
-public function show($id)
+public function PersonalData($id)
 {
     // جلب بيانات الموظف
     $employee = Employee::with(['applicant', 'department', 'position', 'branches', 'company'])
@@ -62,6 +63,65 @@ public function show($id)
         ])
     );
 }
+
+public function personalActivity($id)
+{
+    $employee = Employee::findOrFail($id);
+
+    $tz = 'Africa/Cairo';
+    $currentMonth = now($tz)->month;
+    $currentYear  = now($tz)->year;
+
+    // جلب الحضور للشهر الحالي للموظف
+    $attendances = AttendanceDay::where('employee_id', $employee->id)
+        ->whereYear('work_date', $currentYear)
+        ->whereMonth('work_date', $currentMonth)
+        ->orderBy('work_date', 'asc')
+        ->get();
+
+    // تجهيز بيانات كل يوم مع status منفصل
+    $attendanceDetails = $attendances->map(function ($item) use ($tz) {
+
+        // حساب حالة اليوم
+        $dailyStatus = [];
+
+        if ($item->late_minutes > 0) {
+            $dailyStatus[] = 'lateArrival';
+        }
+
+        if ($item->early_leave_minutes > 0) {
+            $dailyStatus[] = 'earlyLeave';
+        }
+
+        if ($item->overtime_minutes > 0) {
+            $dailyStatus[] = 'overtime';
+        }
+
+        // لو مفيش أي مخالفة
+        if (empty($dailyStatus)) {
+            $dailyStatus[] = 'onTime';
+        }
+
+       return [
+            'date'       => \Carbon\Carbon::parse($item->work_date)->format('Y-m-d'),
+            'check_in'   => $item->first_in_at 
+                            ? \Carbon\Carbon::parse($item->first_in_at)->setTimezone($tz)->format('H:i')
+                            : null,
+            'check_out'  => $item->last_out_at
+                            ? \Carbon\Carbon::parse($item->last_out_at)->setTimezone($tz)->format('H:i')
+                            : null,
+            'status'     => $dailyStatus,
+        ];
+    });
+
+    return response()->json([
+        
+       
+        'attendances' => $attendanceDetails,
+    ]);
+}
+
+
 
 
 

@@ -34,6 +34,7 @@ class EmployeeResource extends JsonResource
             'educations' => $this->educations,
             'experiences' => $this->experiences,
             'skills' => $this->skills,
+            
             'languages' => $this->languages,
             'created_at' => $this->created_at->toDateTimeString(),
 
