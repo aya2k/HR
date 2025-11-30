@@ -29,6 +29,12 @@ class Employee extends Model
         return $this->belongsTo(Department::class);
     }
 
+
+    public function workDays()
+{
+    return $this->hasMany(EmployeeWorkDay::class);
+}
+
     
 
 

@@ -35,7 +35,7 @@ class AbsentSheetController extends Controller
         ->get()
         ->map(function ($r) {
             return [
-                'date'   => $r->work_date,
+                'date'   => $r->date,
                 'reason' => 'Absent',
             ];
         })
@@ -101,7 +101,7 @@ public function exportPdf(Request $request)
         ->whereBetween('date', [$start, $end])
         ->where('status', 'absent')
         ->get()
-        ->map(fn($r) => ['date' => $r->work_date, 'reason' => 'Absent'])
+        ->map(fn($r) => ['date' => $r->date, 'reason' =>  $r->reason ?? 'Absent'])
         ->values();
 
     $leaves = Leave::where('employee_id', $employeeId)

@@ -48,6 +48,15 @@ class StoreEmployeeRequest extends FormRequest
             'image' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'position_applied_for_id' => 'required|integer|exists:positions,id',
             'employment_type_id' => 'nullable|integer|exists:shifts,id',
+            'employee.part_time_type' => 'required_if:employee.employment_type,part_time|in:hours,days',
+            // لو ساعات
+            'employee.total_hours' => 'required_if:employee.part_time_type,hours|nullable|integer|min:1',
+
+            // لو أيام
+            'employee.days' => 'required_if:employee.part_time_type,days|array',
+            'employee.days.*.day' => 'required_if:employee.part_time_type,days|string',
+            'employee.days.*.start_time' => 'required_if:employee.part_time_type,days|date_format:H:i',
+            'employee.days.*.end_time' => 'required_if:employee.part_time_type,days|date_format:H:i|after:employee.days.*.start_time',
             'work_setup' => 'nullable|in:onsite,remote,hybrid',
             'available_start_date' => 'nullable|date',
             'expected_salary' => 'nullable|numeric|min:0',
@@ -100,7 +109,7 @@ class StoreEmployeeRequest extends FormRequest
             'employee' => 'nullable|array',
 
             'employee.applicant_id' => 'nullable|integer|exists:applicants,id',
-            'employee.code' => 'nullable|string|max:50|unique:employees,code',
+            'employee.code' => 'required|string|max:50|unique:employees,code',
             'employee.department_id' => 'nullable|integer|exists:departments,id',
             'employee.manager_id' => 'nullable|integer|exists:employees,id',
             'employee.branch_id' => 'nullable|array',
@@ -137,12 +146,14 @@ class StoreEmployeeRequest extends FormRequest
 
             // Salary & Compensation
             'employee.compensation_type' => 'nullable|string',
-            'employee.base_salary' => 'nullable|numeric|min:0',
+            'employee.base_salary' => 'required|numeric|min:0',
             'employee.hourly_rate' => 'nullable|numeric|min:0',
             'employee.commission_percentage' => 'nullable|numeric|min:0|max:100',
             'employee.kpi' => 'nullable|numeric|min:0',
             'employee.salary_method' => 'nullable|string',
             'employee.has_fixed_salary' => 'nullable|boolean',
+            'employee.card_number' => 'nullable|string',
+            'employee.wallet_number' => 'nullable|string',
 
             'employee.is_manager' => 'nullable|boolean',
             'employee.is_sales' => 'nullable|boolean',

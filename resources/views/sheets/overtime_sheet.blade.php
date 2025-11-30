@@ -48,7 +48,7 @@
                 <th>Date</th>
                 <th>End Shift Time</th>
                 <th>Check Out</th>
-                <th>Overtime (Hours)</th>
+                <th>Overtime (Minutes)</th>
             </tr>
         </thead>
         <tbody>

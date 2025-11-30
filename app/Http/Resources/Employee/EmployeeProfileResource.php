@@ -39,13 +39,15 @@ class EmployeeProfileResource extends JsonResource
             'phone' => $this->applicant->phone,
             'whatsapp_number' => $this->applicant->whatsapp_number,
             'email' => $this->applicant->email,
+            'image' => $this->applicant->image,
 
             'address' => implode('/', array_filter([$governorateName, $this->applicant->city])),
             'country' => $countryName,
 
             'contracts' => $this->applicant->employee?->contracts,
 
-            'manager' => $this->applicant->employee?->department?->manager,
+            'manager' => $this->manager->applicant->first_name ?? null,
+
 
 
             'shift' => $this->applicant->employee->shift->name_en ?? null,
@@ -58,7 +60,8 @@ class EmployeeProfileResource extends JsonResource
             'end_date' => $this->applicant->employee?->end_date,
 
             'salary_type' => $this->applicant->employee?->salary_type,
-            'total_salary' => $this->applicant->employee?->salary,
+            'total_salary' => $this->applicant->employee?->base_salary,
+            'salary_details'   => $this->applicant->employee?->salary_details,
             'kpi' => $this->applicant->employee?->kpi,
             'commission' => $this->applicant->employee?->commission,
 

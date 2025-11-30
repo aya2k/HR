@@ -6,7 +6,7 @@ use App\Http\Controllers\HR\CompanyController;
 use App\Http\Controllers\HR\BranchController;
 use App\Http\Controllers\HR\DepartmentController;
 use App\Http\Controllers\HR\PositionController;
-use App\Http\Controllers\Hr\ShiftController;
+use App\Http\Controllers\HR\ShiftController;
 use App\Http\Controllers\HR\GovernorateController;
 use App\Http\Controllers\HR\CityController;
 use App\Http\Controllers\HR\FormalOccasionController;
@@ -101,6 +101,7 @@ Route::prefix('hr')->group(function () {
                     'destroy' => 'permission:delete_formal_occasion',
                 ]);
             Route::get('/list', [EmployeeController::class, 'simpleList']);
+            Route::get('/header', [EmployeeController::class, 'header']);
             // Employees
             Route::prefix('employees')->group(function () {
                 Route::get('/', [EmployeeController::class, 'index'])
@@ -121,6 +122,8 @@ Route::prefix('hr')->group(function () {
             Route::get('/head-managers', [HeadMangerController::class, 'getManagers']);
             Route::post('/{id}/head-managers', [HeadMangerController::class, 'addAsManager'])
                 ->middleware('permission:add_head_manager');
+              Route::post('/{id}/remove-managers', [HeadMangerController::class, 'removeManager'])
+               ;    
 
             // Attendance & Policies
             Route::apiResource('attendances', AttendanceController::class)
@@ -130,6 +133,7 @@ Route::prefix('hr')->group(function () {
 
                     'destroy' => 'permission:delete_attendance',
                 ]);
+            Route::delete('/attendances', [AttendanceController::class, 'destroy']);
             Route::patch('/attendances/{employeeId}', [AttendanceController::class, 'update']);
 
 
@@ -161,9 +165,9 @@ Route::prefix('hr')->group(function () {
 
             Route::post('over-time', [OverTimeSheetController::class, 'index'])
                 ->middleware('permission:view_overtime_sheet');
-            Route::patch('/{id}', [OverTimeSheetController::class, 'update'])
+            Route::patch('over-time/{id}', [OverTimeSheetController::class, 'update'])
                 ->middleware('permission:edit_overtime_sheet');
-            Route::delete('/{id}', [OverTimeSheetController::class, 'delete'])
+            Route::delete('over-time/{id}', [OverTimeSheetController::class, 'delete'])
                 ->middleware('permission:delete_overtime_sheet');
             Route::get('/over-time-export-pdf', [OverTimeSheetController::class, 'exportPdf'])
                 ->middleware('permission:export_overtime_pdf');
@@ -179,9 +183,9 @@ Route::prefix('hr')->group(function () {
 
             Route::post('attendances-sheet', [AttendanceSheetController::class, 'index'])
                 ->middleware('permission:view_attendance_sheet');
-            Route::patch('/{id}', [AttendanceSheetController::class, 'update'])
+            Route::patch('/late-time/{id}', [AttendanceSheetController::class, 'update'])
                 ->middleware('permission:edit_attendance_sheet');
-            Route::delete('/{id}', [AttendanceSheetController::class, 'delete'])
+            Route::delete('late-time/{id}', [AttendanceSheetController::class, 'delete'])
                 ->middleware('permission:delete_attendance_sheet');
             Route::get('/export-pdf', [AttendanceSheetController::class, 'exportPdf'])
                 ->middleware('permission:export_attendance_pdf');

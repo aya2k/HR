@@ -17,14 +17,19 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\EmployeeWorkDay;
+
 
 class AttendanceController extends Controller
 {
     public function index()
     {
         return AttendanceResource::collection(
-            Attendance::with(['employee','employee.position'])->latest()->paginate()
-        );
+        Attendance::with(['employee','employee.position'])
+                  ->whereNull('deleted_at') 
+                  ->latest()
+                  ->paginate()
+    );
     }
 
 
@@ -162,6 +167,188 @@ class AttendanceController extends Controller
         ]);
     }
 
+// public function store(Request $request)
+// {
+//     $data = $request->validate([
+//         'employee_id' => 'required|exists:employees,id',
+//         'check_in'    => 'required|date_format:H:i',
+//         'check_out'   => 'required|date_format:H:i',
+//         'date'        => 'nullable|date',
+//     ]);
+
+//     $tz = 'Africa/Cairo';
+//     $workDate = $request->date ?? now($tz)->toDateString();
+
+//     // 🧩 جلب الموظف مع الشيفت
+//     $employee = Employee::with('shift')->findOrFail($data['employee_id']);
+//     $shift    = $employee->shift;
+
+//     // 🧩 تحديد نوع التوظيف
+//     $isPartTime = isset($employee->employment_type) &&
+//                   $employee->employment_type === 'part_time';
+
+//     // لازم يكون في شيفت لأي موظف (حتى لو هنستخدمه بس في الفول تايم)
+//     if (!$shift) {
+//         return response()->json(['error' => 'Shift is not assigned to this employee.'], 422);
+//     }
+
+//     // 🧩 لو Full Time لازم يكون للشيفت start/end
+//     if (!$isPartTime && (!$shift->start_time || !$shift->end_time)) {
+//         return response()->json(['error' => 'Shift times missing.'], 422);
+//     }
+
+//     // ✅ إنشاء تواريخ البصمة
+//     $checkIn = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_in']}", $tz);
+//     $checkOut = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_out']}", $tz);
+
+//     if ($checkOut->lt($checkIn)) {
+//         $checkOut->addDay(); // في حالة العمل بعد منتصف الليل
+//     }
+
+//     // ================================
+//     //  إعداد أوقات الشيفت المطلوبة
+//     // ================================
+//     $shiftStart = null;
+//     $shiftEnd   = null;
+//     $requiredHours = 0; // بالـ hours زي ما الكود الأصلي
+
+//     if ($isPartTime) {
+//         // 🔹 Part Time → نستخدم جدول employee_work_days
+//         $dayName = Carbon::parse($workDate, $tz)->format('l'); // Saturday, Sunday...
+
+//         $workDay = EmployeeWorkDay::where('employee_id', $employee->id)
+//             ->where('day', $dayName)
+//             ->first();
+
+//         if (!$workDay || !$workDay->start_time || !$workDay->end_time) {
+//             return response()->json([
+//                 'error' => 'Work day times missing for this part-time employee.',
+//             ], 422);
+//         }
+
+//         // أوقات اليوم من جدول employee_work_days
+//         $shiftStart = Carbon::createFromFormat('Y-m-d H:i:s', "{$workDate} {$workDay->start_time}", $tz);
+//         $shiftEnd   = Carbon::createFromFormat('Y-m-d H:i:s', "{$workDate} {$workDay->end_time}", $tz);
+
+//         if ($shiftEnd->lte($shiftStart)) {
+//             $shiftEnd->addDay(); // في حالة عبور اليوم التالي
+//         }
+
+//         // حساب الساعات المطلوبة من فرق البداية والنهاية
+//         $requiredHours = $shiftStart->diffInMinutes($shiftEnd) / 60;
+//     } else {
+//         // 🔹 Full Time → نستخدم أوقات الـ shift العادي
+//         $shiftStart = Carbon::createFromFormat('Y-m-d H:i:s', "{$workDate} {$shift->start_time}", $tz);
+//         $shiftEnd   = Carbon::createFromFormat('Y-m-d H:i:s', "{$workDate} {$shift->end_time}", $tz);
+
+//         if ($shiftEnd->lte($shiftStart)) {
+//             $shiftEnd->addDay(); // شيفت عابر لليوم التالي
+//         }
+
+//         // نفس السلوك القديم: duration من جدول shifts
+//         $shiftDuration = $shift->duration;
+//         $requiredHours = $shiftDuration;
+//     }
+
+//     // ✅ حسابات الدقائق
+//     $workedMinutes = $checkIn->diffInMinutes($checkOut);
+//     $lateMinutes   = $checkIn->gt($shiftStart) ? $shiftStart->diffInMinutes($checkIn) : 0;
+
+//     $earlyLeave      = 0;
+//     $overtimeMinutes = 0;
+
+//     $workedHours = $workedMinutes / 60;
+
+//     if ($workedHours > $requiredHours) {
+//         // نفس الفكرة القديمة: الأوفر تايم بالـ "ساعات" في المتغير
+//         $overtimeMinutes = $workedHours - $requiredHours ?? 0;
+//     }
+
+//     if ($workedHours < $requiredHours) {
+//         // نفس الفكرة القديمة: الانصراف المبكر بالـ "دقائق" محسوبة من الفرق
+//         $earlyLeave = ($requiredHours - $workedHours) * 60 ?? 0;
+//     }
+
+//     // ✅ سياسة السماح في التأخير
+//     $policy = AttendancePolicy::first();
+//     $grace  = (int)($policy->late_grace_minutes ?? 0);
+//     if ($lateMinutes > 0 && $lateMinutes <= $grace) {
+//         $lateMinutes = 0;
+//     }
+
+//     // ✅ العجز (محافظة على نفس الهيكل حتى لو فيه عدم تطابق وحدات)
+//     $deficitMinutes = max(0, $requiredHours - $workedMinutes);
+
+//     // ✅ حفظ البيانات داخل Transaction
+//     DB::transaction(function () use (
+//         $employee,
+//         $checkIn,
+//         $checkOut,
+//         $workedMinutes,
+//         $lateMinutes,
+//         $earlyLeave,
+//         $overtimeMinutes,
+//         $deficitMinutes,
+//         $requiredHours,
+//         $shift,
+//         $policy,
+//         $workDate
+//     ) {
+//         Attendance::updateOrCreate(
+//             ['employee_id' => $employee->id, 'date' => $workDate],
+//             [
+//                 'check_in'             => $checkIn->format('H:i:s'),
+//                 'check_out'            => $checkOut->format('H:i:s'),
+//                 'total_hours'          => round($workedMinutes / 60, 2),
+//                 'late_minutes'         => $lateMinutes,
+//                 'overtime_minutes'     => $overtimeMinutes,
+//                 'status'               => 'present',
+//                 'fingerprint_verified' => true,
+//             ]
+//         );
+
+//         AttendanceDay::updateOrCreate(
+//             ['employee_id' => $employee->id, 'work_date' => $workDate],
+//             [
+//                 'branch_id'            => $employee->branch_id,
+//                 'required_minutes'     => (int)$requiredHours, // نفس الهيكل القديم
+//                 'break_minutes'        => (int)($shift->break_minutes ?? 0),
+//                 'first_in_at'          => $checkIn,
+//                 'last_out_at'          => $checkOut,
+//                 'worked_minutes'       => (int)$workedMinutes,
+//                 'overtime_minutes'     => (int)$overtimeMinutes,
+//                 'deficit_minutes'      => (int)$deficitMinutes,
+//                 'late_minutes'         => (int)$lateMinutes,
+//                 'early_leave_minutes'  => (int)$earlyLeave,
+//                 'punches_count'        => 2,
+//                 'day_type'             => 'workday',
+//                 'status'               => 'complete',
+//                 'components'           => [
+//                     'shift'  => $shift->name_en ?? $shift->name_ar,
+//                     'policy' => $policy->name ?? 'N/A',
+//                 ],
+//             ]
+//         );
+//     });
+
+//     // ✅ الرد بعد نجاح العملية
+//     return response()->json([
+//         'message'             => '✅ Attendance calculated & saved successfully',
+//         'worked_minutes'      => $workedMinutes,
+//         'overtime_minutes'    => $overtimeMinutes * 60, // محافظة على نفس السلوك الحالي
+//         'late_minutes'        => $lateMinutes,
+//         'early_leave_minutes' => $earlyLeave,
+//         'debug'               => [
+//             'workDate'   => $workDate,
+//             'checkIn'    => $checkIn->toDateTimeString(),
+//             'checkOut'   => $checkOut->toDateTimeString(),
+//             'shiftStart' => $shiftStart->toDateTimeString(),
+//             'shiftEnd'   => $shiftEnd->toDateTimeString(),
+//             'required'   => $requiredHours,
+//             'is_part_time' => $isPartTime,
+//         ],
+//     ]);
+// }
 
 
 
@@ -351,6 +538,36 @@ public function update(Request $request, $employeeId)
         'overtime_minutes'    => $overtimeMinutes,
         'late_minutes'        => $lateMinutes,
         'early_leave_minutes' => $earlyLeave,
+    ]);
+}
+
+
+public function destroy(Request $request)
+{
+    $data = $request->validate([
+        'employee_id' => 'required|exists:employees,id',
+        'date'        => 'required|date'
+    ]);
+
+    $employeeId = $data['employee_id'];
+    $date       = $data['date'];
+
+    DB::transaction(function () use ($employeeId, $date) {
+
+        // ❌ حذف سجل البصمة
+        Attendance::where('employee_id', $employeeId)
+            ->where('date', $date)
+            ->delete();
+
+        // ❌ حذف سجل AttendanceDay
+        AttendanceDay::where('employee_id', $employeeId)
+            ->where('work_date', $date)
+            ->delete();
+    });
+
+    return response()->json([
+        'status'  => true,
+        'message' => "Attendance deleted successfully"
     ]);
 }
 

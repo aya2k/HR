@@ -49,12 +49,19 @@ return new class extends Migration
             $table->integer('num_of_call_system')->default(0);
             $table->boolean('is_manager')->default(false);
             $table->boolean('is_department_manager')->default(false);
+            $table->boolean('is_branch_manager')->default(false);
             $table->boolean('manager_for_all_branches')->default(false);
             $table->string('contract_type')->nullable();
             $table->boolean('is_sales')->default(false);
             $table->enum('salary_type', ['single', 'multi'])->default('single');
             $table->json('salary_details')->nullable();
             $table->json('contracts')->nullable();
+
+             $table->string('card_number')->nullable();
+              $table->string('wallet_number')->nullable();
+
+            $table->enum('part_time_type', ['hours', 'days'])->nullable();  // ساعات ولا أيام
+            $table->integer('total_hours')->nullable();
 
             $table->timestamps();
         });

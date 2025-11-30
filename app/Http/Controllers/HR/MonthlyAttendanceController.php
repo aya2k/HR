@@ -22,22 +22,44 @@ use Illuminate\Support\Collection;
 class MonthlyAttendanceController extends Controller
 {
 
-    public function getMonthlyReportAll(Request $request)
-    {
-        $from   = $request->query('from'); // تاريخ البداية
-        $to     = $request->query('to');   // تاريخ النهاية
-        $branch = $request->query('branch');
-        $keyword = $request->query('keyword');
+   public function getMonthlyReportAll(Request $request)
+{
+    $from    = $request->query('from');
+    $to      = $request->query('to');
+    $branch  = $request->query('branch');
+    $keyword = $request->query('keyword');
+    $month   = $request->query('month', now()->format('Y-m'));
 
-        $month = $request->query('month', now()->format('Y-m'));
+    // limit من الفرونت (افتراضي 10)
+    $limit = $request->integer('limit', 10);
 
-        $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $keyword);
+    // جواب كل الداتا
+    $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $keyword);
 
-        return response()->json([
-            'status' => true,
-            'data' => $summary,
-        ]);
-    }
+    // نحوله Collection ونعمله paginate manually
+    $page = $request->get('page', 1);
+    $collection = collect($summary);
+
+    $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+        $collection->forPage($page, $limit),
+        $collection->count(),
+        $limit,
+        $page,
+        ['path' => url()->current(), 'query' => $request->query()]
+    );
+
+    return response()->json([
+        'status' => true,
+        'data' => $paginated->items(),
+        'meta' => [
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'per_page'     => $paginated->perPage(),
+            'total'        => $paginated->total(),
+        ]
+    ]);
+}
+
 
 
 

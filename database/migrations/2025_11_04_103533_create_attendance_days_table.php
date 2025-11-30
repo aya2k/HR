@@ -41,6 +41,7 @@ return new class extends Migration
 
             $table->unique(['employee_id', 'work_date']);
             $table->index(['branch_id', 'work_date']);
+             $table->softDeletes();
         });
     }
 

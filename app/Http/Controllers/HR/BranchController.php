@@ -12,7 +12,7 @@ use App\Http\Requests\Branch\StoreBranchRequest;
 
 class BranchController extends Controller
 {
-      use ApiResponder;
+    use ApiResponder;
     /**
      * Display a listing of the resource.
      */
@@ -27,15 +27,19 @@ class BranchController extends Controller
      */
     public function store(StoreBranchRequest $request)
     {
-        
 
-        $branch = Branch::create($request->validated());
+
+        $branch = Branch::create([
+            'company_id' => 1,
+            'name_en' => $request->name_en,
+
+        ]);
         return response()->json([
             'message' => 'Branch created successfully ✅',
             'branch' => $branch
         ], 201);
 
-         return $this->respondResource(new BranchResource($branch), [
+        return $this->respondResource(new BranchResource($branch), [
             'message' => 'Created successfully'
         ]);
     }
@@ -45,7 +49,7 @@ class BranchController extends Controller
      */
     public function show(Branch $branch)
     {
-       return response()->json($branch->load('company'));
+        return response()->json($branch->load('company'));
     }
 
     /**
@@ -53,11 +57,11 @@ class BranchController extends Controller
      */
     public function update(UpdateBranchRequest $request, Branch $branch)
     {
-        
 
-       $branch->update($request->validated());
 
-         return $this->respondResource(new BranchResource($branch), [
+        $branch->update($request->validated());
+
+        return $this->respondResource(new BranchResource($branch), [
             'message' => 'Updated successfully'
         ]);
     }

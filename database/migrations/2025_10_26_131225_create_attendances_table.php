@@ -25,6 +25,7 @@ return new class extends Migration
             $table->json('location_out')->nullable();
             $table->boolean('fingerprint_verified')->default(false);
             $table->enum('status', ['present', 'absent', 'late', 'on_leave', 'remote'])->default('present');
+             $table->softDeletes();
             $table->timestamps();
         });
     }

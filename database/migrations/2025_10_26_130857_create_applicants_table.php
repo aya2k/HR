@@ -46,12 +46,15 @@ return new class extends Migration
             $table->string('facebook_link')->nullable();
             $table->string('linkedin_link')->nullable();
             $table->string('github_link')->nullable();
-           $table->json('additional_link')->nullable();
+            $table->json('additional_link')->nullable();
 
             $table->string('cv')->nullable();
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             $table->text('cover_letter')->nullable();
             $table->timestamps();
+
+
+           
         });
     }
 
