@@ -39,12 +39,23 @@ class EmployeeProfileResource extends JsonResource
             'phone' => $this->applicant->phone,
             'whatsapp_number' => $this->applicant->whatsapp_number,
             'email' => $this->applicant->email,
-            'image' => $this->applicant->image,
+            // 'image' => $this->applicant->image,
+
+
+            'image' => $this->applicant->image ? asset($this->image) : null,
 
             'address' => implode('/', array_filter([$governorateName, $this->applicant->city])),
             'country' => $countryName,
 
-            'contracts' => $this->applicant->employee?->contracts,
+            'contracts' => $this->applicant->employee && $this->applicant->employee->contracts
+                ? collect($this->applicant->employee->contracts)->map(fn($c) => asset($c))->all()
+                : [],
+
+
+
+            //  'contracts' => $this->applicant->employee->contracts
+            //             ? collect($this->employee->contracts)->map(fn($c) => asset($c))->all()
+            //             : [],
 
             'manager' => $this->manager->applicant->first_name ?? null,
 
@@ -82,13 +93,13 @@ class EmployeeProfileResource extends JsonResource
             'performance_card' => [
                 'kpi' => 85,
                 'feedback' => 'Good',
-               
+
             ],
 
-             'holiday_card' => [
+            'holiday_card' => [
                 'remaining' => 8,
                 'used' => 3,
-               
+
             ],
 
         ];

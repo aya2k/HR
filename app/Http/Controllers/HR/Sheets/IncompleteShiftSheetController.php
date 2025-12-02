@@ -57,31 +57,47 @@ class IncompleteShiftSheetController extends Controller
 public function update(Request $request, $id)
 {
     $attendance = Attendance::find($id);
+
     if (!$attendance) {
-        return response()->json(['error' => 'Attendance not found'], 404);
+        return response()->json(['status' => false, 'message' => 'Attendance not found'], 404);
     }
 
-    $attendance->update($request->only(['check_in', 'late_minutes']));
+    // التحديث المسموح فقط
+    $attendance->update($request->only([
+        'check_in',
+        'check_out',
+        'late_minutes',
+        'early_leave_minutes',
+        'overtime_minutes',
+        'status',
+        'day_type'
+    ]));
 
     return response()->json([
-        'message' => 'Attendance updated',
+        'status' => true,
+        'message' => 'Attendance updated successfully',
         'attendance' => $attendance
     ]);
 }
 
+
 public function delete($id)
 {
     $attendance = Attendance::find($id);
+
     if (!$attendance) {
-        return response()->json(['error' => 'Attendance not found'], 404);
+        return response()->json(['status' => false, 'message' => 'Attendance not found'], 404);
     }
 
+    // Soft delete
     $attendance->delete();
 
     return response()->json([
-        'message' => 'Attendance deleted'
+        'status' => true,
+        'message' => 'Attendance deleted successfully'
     ]);
 }
+
 
 public function exportPdf(Request $request)
 {

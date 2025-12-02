@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\AttendanceDay;
 
 class OverTimeSheetController extends Controller
 {
@@ -39,7 +40,8 @@ class OverTimeSheetController extends Controller
                 return [
                     'id'             => $r->id,
                     'date'           => $r->date,
-                    'end_shift_time' => $shift?->end_time,   // ====> SELECT فقط من جدول الشيفت
+                    'end_shift_time' => $shift?->end_time,
+                    'check_in'      => $r->check_in, // ====> SELECT فقط من جدول الشيفت
                     'check_out'      => $r->check_out,       // ====> SELECT مباشرة من attendance
                     'overtime'       => $r->overtime_minutes,
 
@@ -58,26 +60,46 @@ class OverTimeSheetController extends Controller
     public function update(Request $request, $id)
     {
         $attendance = Attendance::find($id);
+
         if (!$attendance) {
-            return response()->json(['error' => 'Attendance not found'], 404);
+            return response()->json([
+                'status' => false,
+                'message' => 'Attendance not found'
+            ], 404);
         }
 
-        $attendance->update($request->only(['check_out', 'overtime_minutes']));
+        $attendance->update($request->only([
+            'check_out',
+            'overtime_minutes'
+        ]));
 
-        return response()->json(['message' => 'Attendance updated', 'attendance' => $attendance]);
+        return response()->json([
+            'status' => true,
+            'message' => 'Attendance updated successfully',
+            'attendance' => $attendance
+        ]);
     }
+
 
     public function delete($id)
     {
         $attendance = Attendance::find($id);
+
         if (!$attendance) {
-            return response()->json(['error' => 'Attendance not found'], 404);
+            return response()->json([
+                'status' => false,
+                'message' => 'Attendance not found'
+            ], 404);
         }
 
-        $attendance->delete();
+        $attendance->delete(); // Soft delete
 
-        return response()->json(['message' => 'Attendance deleted']);
+        return response()->json([
+            'status' => true,
+            'message' => 'Attendance deleted successfully'
+        ]);
     }
+
 
 
     public function exportPdf(Request $request)

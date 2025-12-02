@@ -82,7 +82,7 @@ class StoreEmployeeRequest extends FormRequest
 
             'skills' => 'nullable|array',
             'skills.*.name' => 'required_with:skills|string|max:255',
-            'skills.*.skill_level' => 'nullable|integer|min:1|max:5',
+            'skills.*.level' => 'nullable|integer|min:1|max:5',
             'languages' => 'nullable|array',
             'languages.*.language' => 'required_with:languages|string|max:100',
             'languages.*.level' => 'nullable|string|max:100',

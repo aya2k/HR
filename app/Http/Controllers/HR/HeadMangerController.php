@@ -8,21 +8,36 @@ use App\Models\Employee;
 
 class HeadMangerController extends Controller
 {
-    public function getManagers(Request $request)
-    {
-        $managers = Employee::with(['applicant', 'department', 'branches', 'company'])
-            ->where(function ($q) {
-                $q->where('is_manager', true)
-                    ->orWhere('is_department_manager', true)
-                    ->orWhere('manager_for_all_branches', true);
-            })
-            ->get();
+   public function getManagers(Request $request)
+{
+    $managers = Employee::select([
+            'id',
+            'is_manager',
+            'is_department_manager',
+            'manager_for_all_branches',
+            'managed_department_id',
+            'managed_branch_id',
+            'applicant_id'
+        ])
+        ->with([
+            'applicant:id,first_name,middle_name,last_name',
+            'department:id,name_en',
+            'branches:id,name_en,address_en',
+            'company:id,name_en'
+        ])
+        ->where(function ($q) {
+            $q->where('is_manager', true)
+              ->orWhere('is_department_manager', true)
+              ->orWhere('manager_for_all_branches', true);
+        })
+        ->get();
 
-        return response()->json([
-            'status' => true,
-            'data' => $managers
-        ]);
-    }
+    return response()->json([
+        'status' => true,
+        'data' => $managers
+    ]);
+}
+
 
 
  public function addAsManager(Request $request, $id)

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Attendance;
+use App\Models\AttendanceDay;
 use App\Models\Employee;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -63,6 +64,30 @@ class AttendanceSheetController extends Controller
 
         $attendance->update($request->only(['check_in', 'check_out', 'status']));
 
+
+        // بعد تحديث attendance
+        if ($attendance->date) {
+            $day = AttendanceDay::where('employee_id', $attendance->employee_id)
+                ->where('work_date', $attendance->date)
+                ->first();
+
+            if ($day) {
+                // احسبي من جديد
+                $checkIn  = $attendance->check_in ? Carbon::parse($attendance->check_in) : null;
+                $checkOut = $attendance->check_out ? Carbon::parse($attendance->check_out) : null;
+
+                $worked = ($checkIn && $checkOut) ? $checkIn->diffInMinutes($checkOut) : 0;
+
+                $day->update([
+                    'first_in_at' => $checkIn,
+                    'last_out_at' => $checkOut,
+                    'worked_minutes' => $worked,
+                    'status' => ($checkIn && $checkOut) ? 'complete' : 'incomplete',
+                ]);
+            }
+        }
+
+
         return response()->json([
             'message'    => 'Attendance updated',
             'attendance' => $attendance
@@ -75,6 +100,10 @@ class AttendanceSheetController extends Controller
         if (!$attendance) {
             return response()->json(['error' => 'Attendance not found'], 404);
         }
+
+         AttendanceDay::where('employee_id', $attendance->employee_id)
+                 ->where('work_date', $attendance->date)
+                 ->delete();
 
         $attendance->delete();
 

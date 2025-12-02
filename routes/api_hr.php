@@ -27,6 +27,7 @@ use App\Http\Middleware\CheckPermission;
 use App\Http\Controllers\HR\HrController;
 use App\Http\Controllers\HR\PermissionController;
 use App\Http\Controllers\HR\EmployeeProfileController;
+use App\Http\Controllers\ZKAttendanceController;
 
 
 
@@ -35,7 +36,7 @@ Route::prefix('hr')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 
     // Protected HR routes
-    Route::middleware(['auth:hr-api'])->group(function () {
+    Route::middleware(['auth:hr-api'])->prefix('v1')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
@@ -122,8 +123,7 @@ Route::prefix('hr')->group(function () {
             Route::get('/head-managers', [HeadMangerController::class, 'getManagers']);
             Route::post('/{id}/head-managers', [HeadMangerController::class, 'addAsManager'])
                 ->middleware('permission:add_head_manager');
-              Route::post('/{id}/remove-managers', [HeadMangerController::class, 'removeManager'])
-               ;    
+            Route::post('/{id}/remove-managers', [HeadMangerController::class, 'removeManager']);
 
             // Attendance & Policies
             Route::apiResource('attendances', AttendanceController::class)
@@ -174,20 +174,20 @@ Route::prefix('hr')->group(function () {
 
             Route::post('late-time', [IncompleteShiftSheetController::class, 'index'])
                 ->middleware('permission:view_late_sheet');
-            Route::patch('/{id}', [IncompleteShiftSheetController::class, 'update'])
+            Route::patch('late-time/{id}', [IncompleteShiftSheetController::class, 'update'])
                 ->middleware('permission:edit_late_sheet');
-            Route::delete('/{id}', [IncompleteShiftSheetController::class, 'delete'])
+            Route::delete('late-time/{id}', [IncompleteShiftSheetController::class, 'delete'])
                 ->middleware('permission:delete_late_sheet');
             Route::get('/late-time-export-pdf', [IncompleteShiftSheetController::class, 'exportPdf'])
                 ->middleware('permission:export_late_pdf');
 
             Route::post('attendances-sheet', [AttendanceSheetController::class, 'index'])
                 ->middleware('permission:view_attendance_sheet');
-            Route::patch('/late-time/{id}', [AttendanceSheetController::class, 'update'])
+            Route::patch('/attendances-sheet/{id}', [AttendanceSheetController::class, 'update'])
                 ->middleware('permission:edit_attendance_sheet');
-            Route::delete('late-time/{id}', [AttendanceSheetController::class, 'delete'])
+            Route::delete('attendances-sheet/{id}', [AttendanceSheetController::class, 'delete'])
                 ->middleware('permission:delete_attendance_sheet');
-            Route::get('/export-pdf', [AttendanceSheetController::class, 'exportPdf'])
+            Route::get('/attendance-export-pdf', [AttendanceSheetController::class, 'exportPdf'])
                 ->middleware('permission:export_attendance_pdf');
 
             // Permissions management
@@ -208,6 +208,9 @@ Route::prefix('hr')->group(function () {
 
             Route::get('/personal-data/{id}', [EmployeeProfileController::class, 'PersonalData']);
             Route::get('/activity/{id}', [EmployeeProfileController::class, 'PersonalActivity']);
+            Route::patch('/personal-data/{id}', [EmployeeProfileController::class, 'update']);
+
+
 
 
             // Settings
@@ -217,6 +220,15 @@ Route::prefix('hr')->group(function () {
                 ->middleware('permission:add_setting');
             Route::delete('/settings', [SettingController::class, 'destroy'])
                 ->middleware('permission:delete_setting');
+
+
+
+            // routes/api.php
+
+
         });
     });
+
+
+    Route::post('/attendance/import', [ZKAttendanceController::class, 'import']);
 });

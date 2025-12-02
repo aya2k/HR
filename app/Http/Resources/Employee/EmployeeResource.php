@@ -28,13 +28,13 @@ class EmployeeResource extends JsonResource
             'work_setup' => $this->work_setup,
             'available_start_date' => $this->available_start_date,
             'expected_salary' => $this->expected_salary,
-            'cv' => $this->cv ? asset( $this->cv) : null,
-            'image' => $this->image ? asset( $this->image) : null,
-            'certification_attatchment' => $this->certification_attatchment ? asset( $this->certification_attatchment) : null,
+            'cv' => $this->cv ? asset($this->cv) : null,
+            'image' => $this->image ? asset($this->image) : null,
+            'certification_attatchment' => $this->certification_attatchment ? asset($this->certification_attatchment) : null,
             'educations' => $this->educations,
             'experiences' => $this->experiences,
-            'skills' => $this->skills,
-            
+            //'skills' => $this->skills,
+
             'languages' => $this->languages,
             'created_at' => $this->created_at->toDateTimeString(),
 
@@ -42,10 +42,10 @@ class EmployeeResource extends JsonResource
                 return [
                     'id' => $this->employee->id,
                     'code' => $this->employee->code,
-                    'position_id' => $this->employee->position->title_en?? null,
-                   
-                    'branch_id' => $this->employee->branch->name_en?? null,           //?????????
-                    'shift_id' => $this->employee->shift->name_en?? null,
+                    'position_id' => $this->employee->position->title_en ?? null,
+
+                    'branch_id' => $this->employee->branch->name_en ?? null,           //?????????
+                    'shift_id' => $this->employee->shift->name_en ?? null,
                     'status' => $this->employee->status,
                     'join_date' => $this->employee->join_date,
                     'end_date' => $this->employee->end_date,
@@ -55,8 +55,11 @@ class EmployeeResource extends JsonResource
                     'is_manager' => $this->employee->is_manager,
                     'is_sales' => $this->employee->is_sales,
                     'salary_type' => $this->employee->salary_type ?? 'single',
-                    'contracts' => $this->employee->contracts, // array of contracts
-                  // 'salary_details' => $this->employee->salary_details ? 'required' : 'nullable',
+                    'contracts' => $this->employee->contracts
+                        ? collect($this->employee->contracts)->map(fn($c) => asset($c))->all()
+                        : [],
+                    // array of contracts
+                    // 'salary_details' => $this->employee->salary_details ? 'required' : 'nullable',
                 ];
             }),
         ];
