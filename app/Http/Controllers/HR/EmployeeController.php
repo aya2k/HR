@@ -22,14 +22,16 @@ use Carbon\Carbon;
 
 class EmployeeController extends Controller
 {
+
+
     public function store(StoreEmployeeRequest $request)
     {
         DB::beginTransaction();
 
         try {
-            /** ============================
-             *  1️⃣ إنشاء Applicant
-             *  ============================ */
+            // ============================
+            // 1️⃣ إنشاء Applicant
+            // ============================
             $data = collect($request->validated())
                 ->except(['educations', 'experiences', 'skills', 'languages', 'employee'])
                 ->toArray();
@@ -37,66 +39,41 @@ class EmployeeController extends Controller
             $applicant = new Applicant();
             $applicant->fill($data);
 
-            /** ============================
-             *  رفع الملفات الأساسية (cv - image - certification_attatchment)
-             *  ============================ */
-
             foreach (['cv', 'image', 'certification_attatchment'] as $fileField) {
-
                 if ($request->hasFile($fileField)) {
-
                     $file = $request->file($fileField);
-                    $originalName = $file->getClientOriginalName();
-                    $fileName = time() . '_' . str_replace(' ', '_', $originalName);
+                    $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
                     $folder = "assets/library/{$fileField}s/";
-                    $destinationPath = public_path($folder);
-
-                    if (!file_exists($destinationPath)) {
-                        mkdir($destinationPath, 0777, true);
-                    }
-
-                    $file->move($destinationPath, $fileName);
-
-                    // حفظ بنفس طريقة الكتب
+                    $path = public_path($folder);
+                    if (!file_exists($path)) mkdir($path, 0777, true);
+                    $file->move($path, $fileName);
                     $applicant->$fileField = "public/" . $folder . $fileName;
                 }
             }
 
-
-
-
             $applicant->save();
 
-            /** ============================
-             *  2️⃣ رفع ملفات التعليم
-             *  ============================ */
+            // ============================
+            // 2️⃣ رفع ملفات التعليم
+            // ============================
             if ($request->has('educations')) {
                 foreach ($request->educations as $edu) {
-
                     if (isset($edu['attachment']) && $edu['attachment'] instanceof \Illuminate\Http\UploadedFile) {
-
-                        $file       = $edu['attachment'];
-                        $fileName   = time() . '_' . $file->getClientOriginalName();
-                        $folder     = "assets/library/education_attachments/";
-                        $path       = public_path($folder);
-
-                        if (!file_exists($path)) {
-                            mkdir($path, 0777, true);
-                        }
-
+                        $file = $edu['attachment'];
+                        $fileName = time() . '_' . $file->getClientOriginalName();
+                        $folder = "assets/library/education_attachments/";
+                        $path = public_path($folder);
+                        if (!file_exists($path)) mkdir($path, 0777, true);
                         $file->move($path, $fileName);
-
-                        // نفس طريقة الكتب
                         $edu['attachment'] = "public/" . $folder . $fileName;
                     }
-
                     $applicant->educations()->create($edu);
                 }
             }
 
-            /** ============================
-             *  3️⃣ رفع العلاقات الأخرى
-             *  ============================ */
+            // ============================
+            // 3️⃣ رفع العلاقات الأخرى
+            // ============================
             foreach (['experiences', 'skills', 'languages'] as $relation) {
                 if ($request->has($relation)) {
                     foreach ($request->$relation as $item) {
@@ -105,97 +82,105 @@ class EmployeeController extends Controller
                 }
             }
 
-            /** ============================
-             *  4️⃣ إنشاء الموظف Employee
-             *  ============================ */
+            // ============================
+            // 4️⃣ إنشاء الموظف Employee
+            // ============================
             if ($request->has('employee')) {
-
                 $employeeData = $request->employee;
                 $employeeData['applicant_id'] = $applicant->id;
 
                 $branches = $employeeData['branch_id'] ?? [];
                 unset($employeeData['branch_id']);
 
-
-
-
                 $employeeData['contracts'] = $employeeData['contracts'] ?? [];
-
-                if (isset($employeeData['salary_details']) && is_array($employeeData['salary_details'])) {
-                    foreach ($employeeData['salary_details'] as $detail) {
-                        echo $detail['department_name'] . ': ' . $detail['amount'];
-                    }
-                }
-
                 $employeeData['salary_type'] = $employeeData['salary_type'] ?? 'single';
 
+                // حساب مدة العقد
                 if (!empty($employeeData['join_date']) && !empty($employeeData['end_date'])) {
                     $diff = Carbon::parse($employeeData['join_date'])
                         ->diff(Carbon::parse($employeeData['end_date']));
                     $employeeData['contract_duration'] = "{$diff->y} years, {$diff->m} months";
                 }
 
-                $employeeData['shift_id'] = $employeeData['shift_id'] ?? Shift::first()?->id;
+                $employmentTypeId = $employeeData['employment_type_id'] ?? null;
+                $shift = Shift::find($employmentTypeId);
+                $employmentType = $shift?->name_en ?? null;
+
+                $employeeData['shift_id'] = $employmentTypeId;
+                unset($employeeData['employment_type_id']);
+
                 $employeeData['position_id'] = $employeeData['position_id'] ?? Position::first()?->id;
 
-                if (!($employeeData['is_sales'] ?? false)) {
-                    $employeeData['commission_percentage'] = 0;
-                }
+                // if (!($employeeData['is_sales'] ?? false)) {
+                //     $employeeData['commission_percentage'] = 0;
+                // }
 
-                /** رفع العقود */
+                // رفع العقود
                 if (!empty($employeeData['contracts'])) {
                     $uploadedContracts = [];
                     foreach ($employeeData['contracts'] as $contract) {
                         if ($contract instanceof \Illuminate\Http\UploadedFile) {
-
                             $fileName = time() . '_' . str_replace(' ', '_', $contract->getClientOriginalName());
-                            $folder   = "assets/library/contracts/"; // بدون public
-                            $path     = public_path($folder);
-
-                            if (!file_exists($path)) {
-                                mkdir($path, 0777, true);
-                            }
-
+                            $folder = "assets/library/contracts/";
+                            $path = public_path($folder);
+                            if (!file_exists($path)) mkdir($path, 0777, true);
                             $contract->move($path, $fileName);
-
-                            // حفظ المسار نسبيًا بالنسبة للـ public folder
-                            $uploadedContracts[] ="public/" . $folder . $fileName;
+                            $uploadedContracts[] = "public/" . $folder . $fileName;
                         }
                     }
-
-                    // حفظ الـ array في عمود JSON
                     $employeeData['contracts'] = $uploadedContracts;
                 }
 
+                // ============================
+                // تحويل days إلى weekly_work_days لأي full-time أو part-time days
+                // ============================
+                if (isset($employeeData['days']) && !empty($employeeData['days']) && (
+                    $employmentType === 'full time' ||
+                    ($employmentType === 'part time' && ($employeeData['part_time_type'] ?? null) === 'days')
+                )) {
+                    $employeeData['weekly_work_days'] = json_encode($employeeData['days']);
+                }
 
+                // part_time (hours) → تخزين total_hours في monthly_hours_required
+                // if ($employmentType === 'part time' && ($employeeData['part_time_type'] ?? null) === 'hours') {
+                //     $employeeData['monthly_hours_required'] = $employeeData['total_hours'] ?? null;
+                // }
+
+                if (($employmentType === 'part time') && !empty($employeeData['monthly_hours_required'])) {
+                    $employeeData['part_time_type'] = 'hours';
+                }
 
                 $employeeData['status'] = 'accepted';
 
+                // إزالة days بعد التحويل
+                if (isset($employeeData['days'])) {
+                    unset($employeeData['days']);
+                }
+
+                // إنشاء الموظف
                 $employee = Employee::create($employeeData);
 
-                if (
-                    ($employeeData['employment_type'] ?? null) === 'part_time'
-                    && ($employeeData['part_time_type'] ?? null) === 'days'
-                    && isset($employeeData['days'])
-                ) {
-                    foreach ($employeeData['days'] as $day) {
+                // ============================
+                // إنشاء جدول workDays
+                // ============================
+                $days = [];
+                if (isset($employeeData['weekly_work_days'])) {
+                    $days = json_decode($employeeData['weekly_work_days'], true);
+                }
+
+                if (!empty($days)) {
+                    foreach ($days as $day) {
                         $employee->workDays()->create([
-                            'day'        => $day['day'],
-                            'start_time' => $day['start'] ?? null,
-                            'end_time'   => $day['end'] ?? null,
+                            'day'        => $day['day'] ?? null,
+                            'start_time' => $day['start_time'] ?? null,
+                            'end_time'   => $day['end_time'] ?? null,
                         ]);
                     }
                 }
 
-                if (
-                    ($employeeData['employment_type'] ?? null) === 'part_time'
-                    && ($employeeData['part_time_type'] ?? null) === 'hours'
-                ) {
-                    $employee->update([
-                        'total_hours' => $employeeData['total_hours'] ?? 0
-                    ]);
-                }
-
+                // ============================
+                // روابط الفروع
+                // ============================
                 if ($branches) {
                     if (!is_array($branches)) $branches = [$branches];
                     $employee->branches()->sync($branches);
@@ -212,7 +197,6 @@ class EmployeeController extends Controller
                 'data' => new EmployeeResource($applicant),
             ], 201);
         } catch (\Exception $e) {
-
             DB::rollBack();
             return response()->json([
                 'status' => false,
@@ -272,6 +256,8 @@ class EmployeeController extends Controller
             $query->where('position_id', $request->position_id);
         }
 
+
+        $query->latest();
         /*
     |--------------------------------------------------------------------------
     | Pagination (limit)

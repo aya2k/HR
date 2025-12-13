@@ -22,43 +22,43 @@ use Illuminate\Support\Collection;
 class MonthlyAttendanceController extends Controller
 {
 
-   public function getMonthlyReportAll(Request $request)
-{
-    $from    = $request->query('from');
-    $to      = $request->query('to');
-    $branch  = $request->query('branch');
-    $keyword = $request->query('keyword');
-    $month   = $request->query('month', now()->format('Y-m'));
+    public function getMonthlyReportAll(Request $request)
+    {
+        $from    = $request->query('from');
+        $to      = $request->query('to');
+        $branch  = $request->query('branch');
+        $keyword = $request->query('keyword');
+        $month   = $request->query('month', now()->format('Y-m'));
 
-    // limit من الفرونت (افتراضي 10)
-    $limit = $request->integer('limit', 10);
+        // limit من الفرونت (افتراضي 10)
+        $limit = $request->integer('limit', 10);
 
-    // جواب كل الداتا
-    $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $keyword);
+        // جواب كل الداتا
+        $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $keyword);
 
-    // نحوله Collection ونعمله paginate manually
-    $page = $request->get('page', 1);
-    $collection = collect($summary);
+        // نحوله Collection ونعمله paginate manually
+        $page = $request->get('page', 1);
+        $collection = collect($summary);
 
-    $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
-        $collection->forPage($page, $limit),
-        $collection->count(),
-        $limit,
-        $page,
-        ['path' => url()->current(), 'query' => $request->query()]
-    );
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $collection->forPage($page, $limit),
+            $collection->count(),
+            $limit,
+            $page,
+            ['path' => url()->current(), 'query' => $request->query()]
+        );
 
-    return response()->json([
-        'status' => true,
-        'data' => $paginated->items(),
-        'meta' => [
-            'current_page' => $paginated->currentPage(),
-            'last_page'    => $paginated->lastPage(),
-            'per_page'     => $paginated->perPage(),
-            'total'        => $paginated->total(),
-        ]
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'data' => $paginated->items(),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+                'per_page'     => $paginated->perPage(),
+                'total'        => $paginated->total(),
+            ]
+        ]);
+    }
 
 
 
@@ -165,5 +165,29 @@ class MonthlyAttendanceController extends Controller
             'date' => $day,
             'attendances' => $paginated,
         ]);
+    }
+
+
+
+
+
+
+
+
+
+
+    ////========================================================================== part time sheet
+
+    public function partTimeHoursReport(Request $request)
+    {
+        $month   = $request->month ?? now()->format('Y-m');
+        $from    = $request->from;
+        $to      = $request->to;
+        $branch  = $request->branch_id;
+        $keyword = $request->keyword;
+
+        $data = AttendanceDay::getMonthlySummaryPartTimeHours($month, $from, $to, $branch, $keyword);
+
+        return response()->json($data);
     }
 }

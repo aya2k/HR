@@ -124,7 +124,6 @@ class EmployeeProfileController extends Controller
         ]);
     }
 
-
     public function update(Request $request, $id)
     {
         $employee = Employee::with('applicant')->find($id);
@@ -138,89 +137,159 @@ class EmployeeProfileController extends Controller
 
         $applicantId = $employee->applicant->id ?? null;
 
+        // ========= Split full_name ========= //
+        if ($request->filled('full_name')) {
+            $fullName = trim($request->input('full_name'));
+            $parts = preg_split('/\s+/', $fullName);
+
+            $first = $parts[0] ?? null;
+            $middle = null;
+            $last = null;
+
+            if (count($parts) == 2) {
+                $last = $parts[1];
+            } elseif (count($parts) >= 3) {
+                $middle = $parts[1];
+                $last = implode(' ', array_slice($parts, 2));
+            }
+
+            $request->merge([
+                'first_name' => $first,
+                'middle_name' => $middle,
+                'last_name'   => $last,
+            ]);
+        }
+
+        // ========= Validation ========= //
         $request->validate([
             'first_name' => 'sometimes|string|max:255',
             'middle_name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
             'preferred_name' => 'sometimes|string|max:255',
-            'national_id' => [
-                'sometimes',
-                'string',
-                Rule::unique('applicants')->ignore($employee->applicant->id ?? 0),
-            ],
-            'email' => [
-                'sometimes',
-                'email',
-                Rule::unique('applicants')->ignore($employee->applicant->id ?? 0),
-            ],
+            'marital_status' => 'sometimes|string|max:255',
+            'national_id' => ['sometimes', 'string', Rule::unique('applicants')->ignore($applicantId)],
+            'email' => ['sometimes', 'email', Rule::unique('applicants')->ignore($applicantId)],
             'phone' => 'sometimes|string|max:20',
             'whatsapp_number' => 'sometimes|string|max:20',
             'birth_date' => 'sometimes|date',
-            'work_setup' => 'sometimes|string',
-            'available_start_date' => 'sometimes|date',
-            'expected_salary' => 'sometimes|numeric',
+            'governorate_id' => 'sometimes|exists:governorates,id',
+            'country_id' => 'sometimes|exists:countries,id',
+            'city' => 'sometimes|string',
             'cv' => 'sometimes|file|mimes:pdf,doc,docx|max:10240',
             'image' => 'sometimes|image|mimes:jpeg,png,jpg|max:5120',
             'certification_attatchment' => 'sometimes|file|mimes:pdf,jpg,png|max:10240',
 
-            'employee.code' => [
-                'sometimes',
-                'string',
-                Rule::unique('employees')->ignore($employee->id ?? 0),
-            ],
+            'employee.code' => 'sometimes|string',
             'employee.position_id' => 'sometimes|exists:positions,id',
             'employee.branch_id' => 'sometimes|exists:branches,id',
             'employee.shift_id' => 'sometimes|exists:shifts,id',
-            'employee.status' => 'sometimes|string',
+            //'employee.manager_id' => 'sometimes|exists:employees,id',
             'employee.join_date' => 'sometimes|date',
             'employee.end_date' => 'nullable|date',
             'employee.base_salary' => 'sometimes|numeric',
             'employee.compensation_type' => 'sometimes|string',
+            'employee.commission_percentage' => 'sometimes|numeric',
             'employee.salary_method' => 'sometimes|string',
             'employee.is_manager' => 'sometimes|boolean',
             'employee.is_sales' => 'sometimes|boolean',
             'employee.salary_type' => 'sometimes|string',
+            'employee.contract_type' => 'nullable|string',
+            'employee.manager_id' => 'sometimes|nullable|exists:employees,id',
+
+            'employee.weekly_work_days' => 'sometimes|array',
+            'employee.weekly_work_days.*.day' => 'required|string',
+            'employee.weekly_work_days.*.start_time' => 'required|date_format:H:i',
+            'employee.weekly_work_days.*.end_time' => 'required|date_format:H:i',
+
+            'employee.monthly_hours_required' => 'sometimes|numeric',
         ]);
 
-        if ($employee->applicant) {
-            $employee->applicant->update($request->only([
-                'first_name',
-                'middle_name',
-                'last_name',
-                'preferred_name',
-                'national_id',
-                'email',
-                'phone',
-                'whatsapp_number',
-                'birth_date',
-                'work_setup',
-                'available_start_date',
-                'expected_salary'
-            ]));
+        // ========= Update applicant ========= //
+        $employee->applicant->update($request->only([
+            'first_name',
+            'middle_name',
+            'last_name',
+            'preferred_name',
+            'national_id',
+            'email',
+            'phone',
+            'whatsapp_number',
+            'birth_date',
+            'governorate_id',
+            'country_id',
+            'city',
+            'marital_status'
+        ]));
 
-            if ($request->hasFile('cv')) {
-                $employee->applicant->cv = $request->file('cv')->store('uploads/cv', 'public');
+        // ========= Upload Files ========= //
+        foreach (['cv' => 'cvs', 'image' => 'images', 'certification_attatchment' => 'certifications'] as $field => $folder) {
+            if ($request->hasFile($field)) {
+                $file = $request->file($field);
+                $name = time() . '_' . $file->getClientOriginalName();
+                $file->move(public_path("assets/library/{$folder}/"), $name);
+                $employee->applicant->$field = "assets/library/{$folder}/" . $name;
             }
-            if ($request->hasFile('image')) {
-                $employee->applicant->image = $request->file('image')->store('uploads/images', 'public');
-            }
-            if ($request->hasFile('certification_attatchment')) {
-                $employee->applicant->certification_attatchment = $request->file('certification_attatchment')->store('uploads/certifications', 'public');
-            }
-
-            $employee->applicant->save();
         }
 
+        $employee->applicant->save();
+
+        // ========= Update employee ========= //
         if ($request->has('employee')) {
-            $employee->update($request->input('employee'));
+            $employeeData = $request->input('employee');
+
+            // ⚡ Logic: إذا بعتي weekly_work_days يبقى monthly_hours_required = null والعكس صحيح
+            if (!empty($employeeData['weekly_work_days'])) {
+                $employeeData['monthly_hours_required'] = null;
+            } elseif (!empty($employeeData['monthly_hours_required'])) {
+                $employeeData['weekly_work_days'] = null;
+            }
+
+            // حساب مدة العقد
+            $employeeData['contract_duration'] = $this->calculateContractDuration($employeeData);
+
+            $employee->update($employeeData);
+
+             $employee->refresh();
         }
 
+        // ========= Build Full URLs ========= //
+        $employee->applicant->image_url = $employee->applicant->image
+            ? asset($employee->applicant->image)
+            : null;
+
+        $employee->applicant->cv_url = $employee->applicant->cv
+            ? asset($employee->applicant->cv)
+            : null;
+
+        $employee->applicant->certification_url = $employee->applicant->certification_attatchment
+            ? asset($employee->applicant->certification_attatchment)
+            : null;
+
+        $managerId = $employee->manager_id ?? null;
 
         return response()->json([
             'status' => true,
             'message' => 'Profile updated successfully',
             'data' => $employee->load('applicant'),
-
+            'manager' => $managerId,
         ]);
+    }
+
+    /**
+
+     * حساب مدة العقد بين join_date و end_date
+     */
+    protected function calculateContractDuration(array $employeeData): ?string
+    {
+        if (!empty($employeeData['join_date']) && !empty($employeeData['end_date'])) {
+            $join = Carbon::parse($employeeData['join_date']);
+            $end = Carbon::parse($employeeData['end_date']);
+            $diff = $join->diff($end);
+
+
+            return "{$diff->y} years, {$diff->m} months";
+        }
+
+        return null;
     }
 }

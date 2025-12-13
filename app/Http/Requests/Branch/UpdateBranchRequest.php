@@ -24,7 +24,7 @@ class UpdateBranchRequest extends FormRequest
         return [
             'company_id' => 'nullable|exists:companies,id',
 
-            'name_en' => 'nullable|string|max:255',
+           'name_en' => 'nullable|string|max:255|unique:branches,name_en',
             'address_en' => 'nullable|string|max:255',
             'city_en' => 'nullable|string|max:255',
             'phones' => 'nullable|array',

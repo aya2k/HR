@@ -43,11 +43,9 @@ class AttendanceDay extends Model
         $startDate = Carbon::parse($month)->startOfMonth();
         $endDate   = Carbon::parse($month)->endOfMonth();
 
-        // ضبط التاريخ حسب from/to لو موجودين
         $fromDate = $from ? Carbon::parse($from)->startOfDay() : $startDate;
         $toDate   = $to   ? Carbon::parse($to)->endOfDay()   : $endDate;
 
-        // جلب السجلات مع الفلاتر
         $query = self::whereBetween('work_date', [$fromDate, $toDate]);
 
         if ($branch) {
@@ -56,13 +54,20 @@ class AttendanceDay extends Model
 
         $records = $query->get();
 
-        // تجميع حسب الموظف
         $summary = $records->groupBy('employee_id')->map(function ($employeeRecords, $employeeId) use ($startDate, $keyword) {
 
             $employee = Employee::with('applicant', 'position')->find($employeeId);
             if (!$employee) return null;
 
-            // تجهيز الاسم الكامل
+            if ($employee->monthly_hours_required > 0) {
+                return null;
+            }
+
+            $shift = Shift::find($employee->shift_id);
+            $employmentType = strtolower(trim($shift?->name_en ?? 'part time'));
+
+            if (!in_array($employmentType, ['full time', 'part time'])) return null;
+
             $fullName = strtolower(
                 ($employee->applicant->first_name ?? '') . ' ' .
                     ($employee->applicant->middle_name ?? '') . ' ' .
@@ -72,50 +77,100 @@ class AttendanceDay extends Model
             $code  = strtolower($employee->code ?? '');
             $phone = strtolower($employee->phone ?? '');
 
-            // 🔍 فلتر keyword
             if ($keyword) {
                 $kw = strtolower($keyword);
-
                 if (
                     !str_contains($fullName, $kw) &&
                     !str_contains($code, $kw) &&
                     !str_contains($phone, $kw)
-                ) {
-                    return null; // استبعاد
-                }
+                ) return null;
             }
 
-            // جمع البيانات
-            $presentDays = $employeeRecords->whereNull('deleted_at')->whereNotIn('day_type', ['absent', 'leave'])->count();
-            $absentDays  = $employeeRecords->where('day_type', 'absent')->count();
+            $presentDays = $employeeRecords
+                ->whereNull('deleted_at')
+                ->whereNotIn('day_type', ['absent', 'leave'])
+                ->where('status', '!=', 'absent')
+                ->count();
 
-            $totalLate = $employeeRecords->sum(function ($record) {
-                return $record->late_minutes + $record->early_leave_minutes;
-            });
+            $absentDays = $employeeRecords->where('day_type', 'absent')->count();
 
             $totalOvertime = $employeeRecords->sum('overtime_minutes');
 
             $daysWithOvertime = $employeeRecords
-                ->whereNull('deleted_at')      // استبعاد المحذوفين
+                ->whereNull('deleted_at')
                 ->where('overtime_minutes', '>', 0)
                 ->count();
 
+            // حساب الـ totalLate فقط لو الموظف ماكملش ساعات اليوم
+            $totalLate = $employeeRecords->sum(function ($record) use ($employee, $employmentType) {
 
-            // $daysWithIncompleteShift = $employeeRecords->filter(function ($record) {
-            //     return ($record->late_minutes + $record->early_leave_minutes) > 0;
-            // })->count();
+                if (!empty($record->deleted_at)) return 0;
 
+                $dayName = Carbon::parse($record->work_date)->format('l');
+                $weeklyDays = json_decode($employee->weekly_work_days, true);
 
-            $daysWithIncompleteShift = $employeeRecords
-                ->filter(function ($record) {
-                    if (!empty($record->deleted_at)) {
-                        return false; // ❌ استبعاد المحذوفين
-                    }
+                if (!is_array($weeklyDays) || empty($weeklyDays)) {
+                    if ($employmentType === 'full time') {
+                        $weeklyDays = [
+                            ['day' => $dayName, 'start_time' => '08:00', 'end_time' => '17:00']
+                        ];
+                    } else return 0;
+                }
 
-                    return ($record->late_minutes + $record->early_leave_minutes) > 0;
-                })
-                ->count();
+                $dayConfig = collect($weeklyDays)->firstWhere('day', $dayName);
+                if (!$dayConfig || empty($dayConfig['start_time']) || empty($dayConfig['end_time'])) return 0;
 
+                $requiredHours = Carbon::parse($dayConfig['start_time'])
+                    ->diffInMinutes(Carbon::parse($dayConfig['end_time'])) / 60;
+
+                if ($requiredHours <= 0) return 0;
+
+                if ($record->first_in_at && $record->last_out_at) {
+                    $actualHours = Carbon::parse($record->first_in_at)
+                        ->diffInMinutes(Carbon::parse($record->last_out_at)) / 60;
+                } else {
+                    $actualHours = 0;
+                }
+
+                // لو الموظف كمل ساعات اليوم → لا تحسب التأخير
+                if ($actualHours >= $requiredHours) return 0;
+
+                return ($record->late_minutes ?? 0) + ($record->early_leave_minutes ?? 0);
+            });
+
+            // حساب incomplete shifts
+            $daysWithIncompleteShift = $employeeRecords->filter(function ($record) use ($employee, $employmentType) {
+
+                if (!empty($record->deleted_at)) return false;
+
+                $dayName = Carbon::parse($record->work_date)->format('l');
+                $weeklyDays = json_decode($employee->weekly_work_days, true);
+
+                if (!is_array($weeklyDays) || empty($weeklyDays)) {
+                    if ($employmentType === 'full time') {
+                        $weeklyDays = [
+                            ['day' => $dayName, 'start_time' => '08:00', 'end_time' => '17:00']
+                        ];
+                    } else return false;
+                }
+
+                $dayConfig = collect($weeklyDays)->firstWhere('day', $dayName);
+                if (!$dayConfig || empty($dayConfig['start_time']) || empty($dayConfig['end_time'])) return false;
+
+                $requiredHours = Carbon::parse($dayConfig['start_time'])
+                    ->diffInMinutes(Carbon::parse($dayConfig['end_time'])) / 60;
+
+                if ($requiredHours <= 0) return false;
+
+                if ($record->first_in_at && $record->last_out_at) {
+                    $actualHours = Carbon::parse($record->first_in_at)
+                        ->diffInMinutes(Carbon::parse($record->last_out_at)) / 60;
+                } else {
+                    $actualHours = 0;
+                }
+
+                return $actualHours < $requiredHours;
+            })->count();
 
             return [
                 'employee_id' => $employeeId,
@@ -131,11 +186,17 @@ class AttendanceDay extends Model
                 'total_overtime_minutes' => $totalOvertime,
             ];
         })
-            ->filter()  // لحذف null
-            ->values(); // إعادة ترتيب
+            ->filter()
+            ->values();
 
         return $summary;
     }
+
+
+
+
+
+
 
 
 
@@ -203,6 +264,109 @@ class AttendanceDay extends Model
 
             ];
         })->filter()->values();
+
+        return $summary;
+    }
+
+
+
+    //==============================================part time
+
+
+    public static function getMonthlySummaryPartTimeHours($month, $from = null, $to = null, $branch = null, $keyword = null)
+    {
+        $startDate = Carbon::parse($month)->startOfMonth();
+        $endDate   = Carbon::parse($month)->endOfMonth();
+
+        // ضبط التاريخ حسب from/to لو موجودين
+        $fromDate = $from ? Carbon::parse($from)->startOfDay() : $startDate;
+        $toDate   = $to   ? Carbon::parse($to)->endOfDay()   : $endDate;
+
+        // جلب السجلات مع الفلاتر
+        $query = self::whereBetween('work_date', [$fromDate, $toDate]);
+
+        if ($branch) {
+            $query->where('branch_id', $branch);
+        }
+
+        $records = $query->get();
+
+        // تجميع حسب الموظف
+        $summary = $records->groupBy('employee_id')->map(function ($employeeRecords, $employeeId) use ($startDate, $keyword) {
+
+            $employee = Employee::with('applicant', 'position')->find($employeeId);
+            if (!$employee) return null;
+
+            $shift = Shift::find($employee->shift_id);
+            $employmentType = strtolower(trim($shift?->name_en ?? ''));
+
+            // ✨ استبعاد أي حد مش Part Time Hours
+            if ($employmentType !== 'part time' || $employee->part_time_type !== 'hours') {
+                return null;
+            }
+
+            // تجهيز الاسم
+            $fullName = strtolower(
+                ($employee->applicant->first_name ?? '') . ' ' .
+                    ($employee->applicant->middle_name ?? '') . ' ' .
+                    ($employee->applicant->last_name ?? '')
+            );
+
+            $code  = strtolower($employee->code ?? '');
+            $phone = strtolower($employee->phone ?? '');
+
+            // فلتر keyword
+            if ($keyword) {
+                $kw = strtolower($keyword);
+                if (
+                    !str_contains($fullName, $kw) &&
+                    !str_contains($code, $kw) &&
+                    !str_contains($phone, $kw)
+                ) {
+                    return null;
+                }
+            }
+
+            // ============================
+            //   حساب ساعات العمل
+            // ============================
+
+            // 1) نجمع الدقايق
+            $workedMinutes = (float) $employeeRecords->sum('worked_minutes');
+
+            // 2) نحول الدقايق لساعات
+            $workedHours = round($workedMinutes / 60, 2);
+
+
+            // 3) required ساعات جاهزة
+            $required = (float) ($employee->monthly_hours_required ?? 0);
+
+            // 4) حساب الأوفر تايم (بدون علاقة بالشيفت)
+            if ($workedHours > $required) {
+                $overtime = round($workedHours - $required, 2);
+                $deficit = 0;
+            } else {
+                $overtime = 0;
+                $deficit = round($required - $workedHours, 2);
+            }
+
+
+            return [
+                'employee_id'   => $employeeId,
+                'employee_code' => $employee->code,
+                'employee_name' => $fullName,
+                'employee_position' => $employee->position->title_en ?? null,
+
+                'month' => $startDate->format('Y-m'),
+
+                'monthly_worked_hours'   => $workedHours*60,
+                'monthly_required_hours' => $required,
+                'monthly_overtime_hours' => $overtime,
+                'monthly_deficit_hours'  => $deficit *60,
+            ];
+        })
+            ->filter()
+            ->values();
 
         return $summary;
     }

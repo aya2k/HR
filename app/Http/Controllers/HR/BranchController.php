@@ -25,24 +25,36 @@ class BranchController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBranchRequest $request)
-    {
+   public function store(StoreBranchRequest $request)
+{
+    // 1. هات كل الأسماء الموجودة في جدول الفروع
+    $existingNames = Branch::pluck('name_en')->toArray();
 
+    // 2. Escape عشان سلامة الـ regex
+    $escapedNames = array_map(function($name) {
+        return preg_quote($name, '/');
+    }, $existingNames);
 
-        $branch = Branch::create([
-            'company_id' => 1,
-            'name_en' => $request->name_en,
+    // 3. بناء regex يمنع التطابق الكامل مع أي اسم موجود (case-insensitive)
+    $regex = '/^(?!(' . implode('|', $escapedNames) . ')$).+$/i';
 
-        ]);
-        return response()->json([
-            'message' => 'Branch created successfully ✅',
-            'branch' => $branch
-        ], 201);
+    // 4. Validation manual لأن StoreBranchRequest ما بتدعم regex dynamic
+    $validated = $request->validate([
+        'name_en' => ["required", "string", "max:255", "regex:$regex"],
+    ]);
 
-        return $this->respondResource(new BranchResource($branch), [
-            'message' => 'Created successfully'
-        ]);
-    }
+    // 5. إنشاء الفرع
+    $branch = Branch::create([
+        'company_id' => 1,
+        'name_en' => $validated['name_en'],
+    ]);
+
+    return response()->json([
+        'message' => 'Branch created successfully ✅',
+        'branch' => $branch
+    ], 201);
+}
+
 
     /**
      * Display the specified resource.

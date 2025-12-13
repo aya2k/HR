@@ -14,6 +14,7 @@ class HeadMangerController extends Controller
             'id',
             'is_manager',
             'is_department_manager',
+            'is_branch_manager',
             'manager_for_all_branches',
             'managed_department_id',
             'managed_branch_id',
@@ -21,13 +22,13 @@ class HeadMangerController extends Controller
         ])
         ->with([
             'applicant:id,first_name,middle_name,last_name',
-            'department:id,name_en',
-            'branches:id,name_en,address_en',
-            'company:id,name_en'
+            'managedDepartment:id,name_en',
+            'managedBranch:id,name_en,address_en',
         ])
         ->where(function ($q) {
             $q->where('is_manager', true)
               ->orWhere('is_department_manager', true)
+              ->orWhere('is_branch_manager', true)
               ->orWhere('manager_for_all_branches', true);
         })
         ->get();

@@ -37,6 +37,15 @@ class Employee extends Model
 
     
 
+public function managedDepartment()
+{
+    return $this->belongsTo(Department::class, 'managed_department_id');
+}
+
+public function managedBranch()
+{
+    return $this->belongsTo(Branch::class, 'managed_branch_id');
+}
 
 
 

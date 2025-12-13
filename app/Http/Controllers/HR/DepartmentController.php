@@ -17,36 +17,42 @@ class DepartmentController extends Controller
     }
 
     // إنشاء قسم جديد
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
+   public function store(Request $request)
+{
+   
+    $existingNames = Department::pluck('name_en')->toArray();
 
-            'name_en' => 'required|string|max:255',
-            'description_en' => 'nullable|string|max:255',
-            'company_id' => 'nullable|integer|exists:companies,id',
-            'branch_id' => 'nullable|integer|exists:branches,id',
-            'phones' => 'nullable|array',
-            'phones.*' => 'string|max:20',
+    $escapedNames = array_map(function($name) {
+        return preg_quote($name, '/');
+    }, $existingNames);
 
-        ]);
+    
+    $regex = '/^(?!(' . implode('|', $escapedNames) . ')$).+$/i';
 
-        $colors = [
-        '#4CAF50', '#2196F3', '#FF5722', '#9C27B0',
-        '#E91E63', '#3F51B5', '#009688', '#FFC107',
-        '#FF9800', '#795548', '#607D8B'
+    $validated = $request->validate([
+        'name_en' => ['required', 'string', 'max:255', "regex:$regex"],
+        'description_en' => 'nullable|string|max:255',
+        'company_id' => 'nullable|integer|exists:companies,id',
+        'branch_id' => 'nullable|integer|exists:branches,id',
+        'phones' => 'nullable|array',
+        'phones.*' => 'string|max:20',
+    ]);
+
+    // random color
+    $colors = [
+        '#4CAF50','#2196F3','#FF5722','#9C27B0','#E91E63',
+        '#3F51B5','#009688','#FFC107','#FF9800','#795548','#607D8B'
     ];
-
     $validated['color'] = $colors[array_rand($colors)];
 
-        $department = Department::create($validated);
+    $department = Department::create($validated);
 
+    return response()->json([
+        'status' => true,
+        'data' => $department
+    ], 201);
+}
 
-
-        return response()->json([
-            'status' => true,
-            'data' => $department
-        ], 201);
-    }
 
     // عرض قسم معين
     public function show($id)

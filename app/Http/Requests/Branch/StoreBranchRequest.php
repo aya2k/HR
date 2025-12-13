@@ -23,7 +23,8 @@ class StoreBranchRequest extends FormRequest
     {
         return [
             
-            'name_en'    => 'required|string|max:255',
+          
+            'name_en' => 'required|string|max:255|unique:branches,name_en',
             'address_en' => 'nullable|string|max:255',
             'city_en'    => 'nullable|string|max:255',
             'phones' => 'nullable|array',

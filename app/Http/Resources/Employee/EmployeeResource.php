@@ -29,6 +29,7 @@ class EmployeeResource extends JsonResource
             'available_start_date' => $this->available_start_date,
             'expected_salary' => $this->expected_salary,
             'cv' => $this->cv ? asset($this->cv) : null,
+
             'image' => $this->image ? asset($this->image) : null,
             'certification_attatchment' => $this->certification_attatchment ? asset($this->certification_attatchment) : null,
             'educations' => $this->educations,
@@ -60,6 +61,8 @@ class EmployeeResource extends JsonResource
                         : [],
                     // array of contracts
                     // 'salary_details' => $this->employee->salary_details ? 'required' : 'nullable',
+
+
                 ];
             }),
         ];

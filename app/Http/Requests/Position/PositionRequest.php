@@ -21,12 +21,24 @@ class PositionRequest extends FormRequest
      */
     public function rules(): array
     {
+        // 1. هات كل أسماء الوظائف من قاعدة البيانات
+        $existingNames = \App\Models\Position::pluck('title_en')->toArray();
+
+        // 2. Escape الأسماء عشان regex
+        $escapedNames = array_map(function ($name) {
+            return preg_quote($name, '/');
+        }, $existingNames);
+
+        // 3. Regex يمنع التطابق الكامل (case insensitive)
+        $regex = '/^(?!(' . implode('|', $escapedNames) . ')$).+$/i';
+
         return [
-            'branch_id' => 'required|exists:branches,id',
-            
-            'title_en' => 'required|string|max:255',
-            
+            'branch_id'     => 'nullable|exists:branches,id',
+            'title_en'      => ['required', 'string', 'max:255', "regex:$regex"],
             'description_en' => 'nullable|string',
+            'department_id'     => 'nullable|exists:departments,id',
+
+
         ];
     }
 }

@@ -17,13 +17,7 @@
         "emojiU": "U+1F1E6 U+1F1EB",
         "native": "افغانستان"
       },
-      {
-        "id": "2",
-        "name": "Aland Islands",
-        "phoneCode": "+358-18",
-        "emojiU": "U+1F1E6 U+1F1FD",
-        "native": "Åland"
-      },
+      
       {
         "id": "3",
         "name": "Albania",
@@ -38,13 +32,7 @@
         "emojiU": "U+1F1E9 U+1F1FF",
         "native": "الجزائر"
       },
-      {
-        "id": "5",
-        "name": "American Samoa",
-        "phoneCode": "+1-684",
-        "emojiU": "U+1F1E6 U+1F1F8",
-        "native": "American Samoa"
-      },
+      
       {
         "id": "6",
         "name": "Andorra",
@@ -59,20 +47,7 @@
         "emojiU": "U+1F1E6 U+1F1F4",
         "native": "Angola"
       },
-      {
-        "id": "8",
-        "name": "Anguilla",
-        "phoneCode": "+1-264",
-        "emojiU": "U+1F1E6 U+1F1EE",
-        "native": "Anguilla"
-      },
-      {
-        "id": "9",
-        "name": "Antarctica",
-        "phoneCode": "672",
-        "emojiU": "U+1F1E6 U+1F1F6",
-        "native": "Antarctica"
-      },
+      
       {
         "id": "10",
         "name": "Antigua And Barbuda",
@@ -94,13 +69,7 @@
         "emojiU": "U+1F1E6 U+1F1F2",
         "native": "Հայաստան"
       },
-      {
-        "id": "13",
-        "name": "Aruba",
-        "phoneCode": "297",
-        "emojiU": "U+1F1E6 U+1F1FC",
-        "native": "Aruba"
-      },
+      
       {
         "id": "14",
         "name": "Australia",
@@ -213,13 +182,7 @@
         "emojiU": "U+1F1E7 U+1F1FC",
         "native": "Botswana"
       },
-      {
-        "id": "30",
-        "name": "Bouvet Island",
-        "phoneCode": "0055",
-        "emojiU": "U+1F1E7 U+1F1FB",
-        "native": "Bouvetøya"
-      },
+      
       {
         "id": "31",
         "name": "Brazil",
@@ -227,13 +190,7 @@
         "emojiU": "U+1F1E7 U+1F1F7",
         "native": "Brasil"
       },
-      {
-        "id": "32",
-        "name": "British Indian Ocean Territory",
-        "phoneCode": "246",
-        "emojiU": "U+1F1EE U+1F1F4",
-        "native": "British Indian Ocean Territory"
-      },
+      
       {
         "id": "33",
         "name": "Brunei",
@@ -290,13 +247,7 @@
         "emojiU": "U+1F1E8 U+1F1FB",
         "native": "Cabo Verde"
       },
-      {
-        "id": "41",
-        "name": "Cayman Islands",
-        "phoneCode": "+1-345",
-        "emojiU": "U+1F1F0 U+1F1FE",
-        "native": "Cayman Islands"
-      },
+      
       {
         "id": "42",
         "name": "Central African Republic",
@@ -325,20 +276,8 @@
         "emojiU": "U+1F1E8 U+1F1F3",
         "native": "中国"
       },
-      {
-        "id": "46",
-        "name": "Christmas Island",
-        "phoneCode": "61",
-        "emojiU": "U+1F1E8 U+1F1FD",
-        "native": "Christmas Island"
-      },
-      {
-        "id": "47",
-        "name": "Cocos (Keeling) Islands",
-        "phoneCode": "61",
-        "emojiU": "U+1F1E8 U+1F1E8",
-        "native": "Cocos (Keeling) Islands"
-      },
+      
+     
       {
         "id": "48",
         "name": "Colombia",
@@ -360,13 +299,7 @@
         "emojiU": "U+1F1E8 U+1F1EC",
         "native": "République du Congo"
       },
-      {
-        "id": "51",
-        "name": "Cook Islands",
-        "phoneCode": "682",
-        "emojiU": "U+1F1E8 U+1F1F0",
-        "native": "Cook Islands"
-      },
+     
       {
         "id": "52",
         "name": "Costa Rica",
@@ -395,13 +328,7 @@
         "emojiU": "U+1F1E8 U+1F1FA",
         "native": "Cuba"
       },
-      {
-        "id": "56",
-        "name": "Curaçao",
-        "phoneCode": "599",
-        "emojiU": "U+1F1E8 U+1F1FC",
-        "native": "Curaçao"
-      },
+      
       {
         "id": "57",
         "name": "Cyprus",
@@ -507,20 +434,7 @@
         "emojiU": "U+1F1EA U+1F1F9",
         "native": "ኢትዮጵያ"
       },
-      {
-        "id": "72",
-        "name": "Falkland Islands",
-        "phoneCode": "500",
-        "emojiU": "U+1F1EB U+1F1F0",
-        "native": "Falkland Islands"
-      },
-      {
-        "id": "73",
-        "name": "Faroe Islands",
-        "phoneCode": "298",
-        "emojiU": "U+1F1EB U+1F1F4",
-        "native": "Føroyar"
-      },
+      
       {
         "id": "74",
         "name": "Fiji Islands",
@@ -542,20 +456,7 @@
         "emojiU": "U+1F1EB U+1F1F7",
         "native": "France"
       },
-      {
-        "id": "77",
-        "name": "French Guiana",
-        "phoneCode": "594",
-        "emojiU": "U+1F1EC U+1F1EB",
-        "native": "Guyane française"
-      },
-      {
-        "id": "78",
-        "name": "French Polynesia",
-        "phoneCode": "689",
-        "emojiU": "U+1F1F5 U+1F1EB",
-        "native": "Polynésie française"
-      },
+      
       {
         "id": "79",
         "name": "French Southern Territories",
@@ -598,13 +499,7 @@
         "emojiU": "U+1F1EC U+1F1ED",
         "native": "Ghana"
       },
-      {
-        "id": "85",
-        "name": "Gibraltar",
-        "phoneCode": "350",
-        "emojiU": "U+1F1EC U+1F1EE",
-        "native": "Gibraltar"
-      },
+      
       {
         "id": "86",
         "name": "Greece",
@@ -612,13 +507,7 @@
         "emojiU": "U+1F1EC U+1F1F7",
         "native": "Ελλάδα"
       },
-      {
-        "id": "87",
-        "name": "Greenland",
-        "phoneCode": "299",
-        "emojiU": "U+1F1EC U+1F1F1",
-        "native": "Kalaallit Nunaat"
-      },
+      
       {
         "id": "88",
         "name": "Grenada",
@@ -633,13 +522,7 @@
         "emojiU": "U+1F1EC U+1F1F5",
         "native": "Guadeloupe"
       },
-      {
-        "id": "90",
-        "name": "Guam",
-        "phoneCode": "+1-671",
-        "emojiU": "U+1F1EC U+1F1FA",
-        "native": "Guam"
-      },
+      
       {
         "id": "91",
         "name": "Guatemala",
@@ -647,13 +530,7 @@
         "emojiU": "U+1F1EC U+1F1F9",
         "native": "Guatemala"
       },
-      {
-        "id": "92",
-        "name": "Guernsey and Alderney",
-        "phoneCode": "+44-1481",
-        "emojiU": "U+1F1EC U+1F1EC",
-        "native": "Guernsey"
-      },
+      
       {
         "id": "93",
         "name": "Guinea",
@@ -682,13 +559,7 @@
         "emojiU": "U+1F1ED U+1F1F9",
         "native": "Haïti"
       },
-      {
-        "id": "97",
-        "name": "Heard Island and McDonald Islands",
-        "phoneCode": "672",
-        "emojiU": "U+1F1ED U+1F1F2",
-        "native": "Heard Island and McDonald Islands"
-      },
+      
       {
         "id": "98",
         "name": "Honduras",
@@ -780,13 +651,7 @@
         "emojiU": "U+1F1EF U+1F1F5",
         "native": "日本"
       },
-      {
-        "id": "111",
-        "name": "Jersey",
-        "phoneCode": "+44-1534",
-        "emojiU": "U+1F1EF U+1F1EA",
-        "native": "Jersey"
-      },
+     
       {
         "id": "112",
         "name": "Jordan",
@@ -899,13 +764,7 @@
         "emojiU": "U+1F1F1 U+1F1FA",
         "native": "Luxembourg"
       },
-      {
-        "id": "128",
-        "name": "Macau S.A.R.",
-        "phoneCode": "853",
-        "emojiU": "U+1F1F2 U+1F1F4",
-        "native": "澳門"
-      },
+     
       {
         "id": "129",
         "name": "Madagascar",
@@ -948,13 +807,7 @@
         "emojiU": "U+1F1F2 U+1F1F9",
         "native": "Malta"
       },
-      {
-        "id": "135",
-        "name": "Man (Isle of)",
-        "phoneCode": "+44-1624",
-        "emojiU": "U+1F1EE U+1F1F2",
-        "native": "Isle of Man"
-      },
+     
       {
         "id": "136",
         "name": "Marshall Islands",
@@ -962,13 +815,7 @@
         "emojiU": "U+1F1F2 U+1F1ED",
         "native": "M̧ajeļ"
       },
-      {
-        "id": "137",
-        "name": "Martinique",
-        "phoneCode": "596",
-        "emojiU": "U+1F1F2 U+1F1F6",
-        "native": "Martinique"
-      },
+      
       {
         "id": "138",
         "name": "Mauritania",
@@ -983,13 +830,7 @@
         "emojiU": "U+1F1F2 U+1F1FA",
         "native": "Maurice"
       },
-      {
-        "id": "140",
-        "name": "Mayotte",
-        "phoneCode": "262",
-        "emojiU": "U+1F1FE U+1F1F9",
-        "native": "Mayotte"
-      },
+      
       {
         "id": "141",
         "name": "Mexico",
@@ -1032,13 +873,7 @@
         "emojiU": "U+1F1F2 U+1F1EA",
         "native": "Црна Гора"
       },
-      {
-        "id": "147",
-        "name": "Montserrat",
-        "phoneCode": "+1-664",
-        "emojiU": "U+1F1F2 U+1F1F8",
-        "native": "Montserrat"
-      },
+      
       {
         "id": "148",
         "name": "Morocco",
@@ -1123,20 +958,8 @@
         "emojiU": "U+1F1F3 U+1F1EC",
         "native": "Nigeria"
       },
-      {
-        "id": "160",
-        "name": "Niue",
-        "phoneCode": "683",
-        "emojiU": "U+1F1F3 U+1F1FA",
-        "native": "Niuē"
-      },
-      {
-        "id": "161",
-        "name": "Norfolk Island",
-        "phoneCode": "672",
-        "emojiU": "U+1F1F3 U+1F1EB",
-        "native": "Norfolk Island"
-      },
+     
+     
       {
         "id": "162",
         "name": "North Korea",
@@ -1151,13 +974,7 @@
         "emojiU": "U+1F1F2 U+1F1F0",
         "native": "Северна Македонија"
       },
-      {
-        "id": "164",
-        "name": "Northern Mariana Islands",
-        "phoneCode": "+1-670",
-        "emojiU": "U+1F1F2 U+1F1F5",
-        "native": "Northern Mariana Islands"
-      },
+      
       {
         "id": "165",
         "name": "Norway",
@@ -1228,13 +1045,7 @@
         "emojiU": "U+1F1F5 U+1F1ED",
         "native": "Pilipinas"
       },
-      {
-        "id": "175",
-        "name": "Pitcairn Island",
-        "phoneCode": "870",
-        "emojiU": "U+1F1F5 U+1F1F3",
-        "native": "Pitcairn Islands"
-      },
+     
       {
         "id": "176",
         "name": "Poland",
@@ -1291,13 +1102,7 @@
         "emojiU": "U+1F1F7 U+1F1FC",
         "native": "Rwanda"
       },
-      {
-        "id": "184",
-        "name": "Saint Helena",
-        "phoneCode": "290",
-        "emojiU": "U+1F1F8 U+1F1ED",
-        "native": "Saint Helena"
-      },
+      
       {
         "id": "185",
         "name": "Saint Kitts And Nevis",
@@ -1312,13 +1117,7 @@
         "emojiU": "U+1F1F1 U+1F1E8",
         "native": "Saint Lucia"
       },
-      {
-        "id": "187",
-        "name": "Saint Pierre and Miquelon",
-        "phoneCode": "508",
-        "emojiU": "U+1F1F5 U+1F1F2",
-        "native": "Saint-Pierre-et-Miquelon"
-      },
+      
       {
         "id": "188",
         "name": "Saint Vincent And The Grenadines",
@@ -1326,20 +1125,8 @@
         "emojiU": "U+1F1FB U+1F1E8",
         "native": "Saint Vincent and the Grenadines"
       },
-      {
-        "id": "189",
-        "name": "Saint-Barthelemy",
-        "phoneCode": "590",
-        "emojiU": "U+1F1E7 U+1F1F1",
-        "native": "Saint-Barthélemy"
-      },
-      {
-        "id": "190",
-        "name": "Saint-Martin (French part)",
-        "phoneCode": "590",
-        "emojiU": "U+1F1F2 U+1F1EB",
-        "native": "Saint-Martin"
-      },
+      
+      
       {
         "id": "191",
         "name": "Samoa",
@@ -1403,13 +1190,7 @@
         "emojiU": "U+1F1F8 U+1F1EC",
         "native": "Singapore"
       },
-      {
-        "id": "200",
-        "name": "Sint Maarten (Dutch part)",
-        "phoneCode": "1721",
-        "emojiU": "U+1F1F8 U+1F1FD",
-        "native": "Sint Maarten"
-      },
+      
       {
         "id": "201",
         "name": "Slovakia",
@@ -1445,13 +1226,7 @@
         "emojiU": "U+1F1FF U+1F1E6",
         "native": "South Africa"
       },
-      {
-        "id": "206",
-        "name": "South Georgia",
-        "phoneCode": "500",
-        "emojiU": "U+1F1EC U+1F1F8",
-        "native": "South Georgia"
-      },
+      
       {
         "id": "207",
         "name": "South Korea",
@@ -1571,13 +1346,7 @@
         "emojiU": "U+1F1F9 U+1F1EC",
         "native": "Togo"
       },
-      {
-        "id": "224",
-        "name": "Tokelau",
-        "phoneCode": "690",
-        "emojiU": "U+1F1F9 U+1F1F0",
-        "native": "Tokelau"
-      },
+      
       {
         "id": "225",
         "name": "Tonga",
@@ -1613,13 +1382,7 @@
         "emojiU": "U+1F1F9 U+1F1F2",
         "native": "Türkmenistan"
       },
-      {
-        "id": "230",
-        "name": "Turks And Caicos Islands",
-        "phoneCode": "+1-649",
-        "emojiU": "U+1F1F9 U+1F1E8",
-        "native": "Turks and Caicos Islands"
-      },
+     
       {
         "id": "231",
         "name": "Tuvalu",
@@ -1690,13 +1453,7 @@
         "emojiU": "U+1F1FB U+1F1FA",
         "native": "Vanuatu"
       },
-      {
-        "id": "241",
-        "name": "Vatican City State (Holy See)",
-        "phoneCode": "379",
-        "emojiU": "U+1F1FB U+1F1E6",
-        "native": "Vaticano"
-      },
+      
       {
         "id": "242",
         "name": "Venezuela",
@@ -1704,20 +1461,14 @@
         "emojiU": "U+1F1FB U+1F1EA",
         "native": "Venezuela"
       },
-      {
+      {  
         "id": "243",
         "name": "Vietnam",
         "phoneCode": "84",
         "emojiU": "U+1F1FB U+1F1F3",
         "native": "Việt Nam"
       },
-      {
-        "id": "244",
-        "name": "Virgin Islands (British)",
-        "phoneCode": "+1-284",
-        "emojiU": "U+1F1FB U+1F1EC",
-        "native": "British Virgin Islands"
-      },
+      
       {
         "id": "245",
         "name": "Virgin Islands (US)",
@@ -1725,20 +1476,8 @@
         "emojiU": "U+1F1FB U+1F1EE",
         "native": "United States Virgin Islands"
       },
-      {
-        "id": "246",
-        "name": "Wallis And Futuna Islands",
-        "phoneCode": "681",
-        "emojiU": "U+1F1FC U+1F1EB",
-        "native": "Wallis et Futuna"
-      },
-      {
-        "id": "247",
-        "name": "Western Sahara",
-        "phoneCode": "212",
-        "emojiU": "U+1F1EA U+1F1ED",
-        "native": "الصحراء الغربية"
-      },
+      
+      
       {
         "id": "248",
         "name": "Yemen",

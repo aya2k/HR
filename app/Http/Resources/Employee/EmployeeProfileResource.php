@@ -59,9 +59,11 @@ class EmployeeProfileResource extends JsonResource
 
             'manager' => $this->manager->applicant->first_name ?? null,
 
+        //  'weekly_work_days' => $this->weekly_work_days ? json_decode($this->weekly_work_days, true) : [],
 
-
-            'shift' => $this->applicant->employee->shift->name_en ?? null,
+            'shift_id' => $this->applicant->employee->shift->id ?? null,
+             'weekly_work_days'=> $this->applicant->employee->weekly_work_days ?? null,
+             'monthly_hours_required'=> $this->applicant->employee->monthly_hours_required ?? null,
             'position' => $this->applicant->employee?->position?->title_en,
             'shift_hours' => $this->applicant->employee?->shift?->duration,
 
@@ -69,12 +71,13 @@ class EmployeeProfileResource extends JsonResource
             'contract_duration' => $this->applicant->employee?->contract_duration,
             'join_date' => $this->applicant->employee?->join_date,
             'end_date' => $this->applicant->employee?->end_date,
+            'weekly_work_days'=> $this->applicant->employee->weekly_work_days ?? null,
 
             'salary_type' => $this->applicant->employee?->salary_type,
-            'total_salary' => $this->applicant->employee?->base_salary,
+            'base_salary' => $this->applicant->employee?->base_salary,
             'salary_details'   => $this->applicant->employee?->salary_details,
             'kpi' => $this->applicant->employee?->kpi,
-            'commission' => $this->applicant->employee?->commission,
+            'commission' => $this->applicant->employee?->commission_percentage,
 
 
             'attendace_card' => [
