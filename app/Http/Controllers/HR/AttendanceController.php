@@ -35,187 +35,192 @@ class AttendanceController extends Controller
 
 
     public function store(Request $request)
-    {
-        $data = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'check_in'    => 'required|date_format:H:i',
-            'check_out'   => 'required|date_format:H:i',
-            'date'        => 'nullable|date|before_or_equal:today',
-        ]);
+{
+    $data = $request->validate([
+        'employee_id' => 'required|exists:employees,id',
+        'check_in'    => 'required|date_format:H:i',
+        'check_out'   => 'required|date_format:H:i',
+        'date'        => 'nullable|date|before_or_equal:today',
+    ]);
 
+    $tz = 'Africa/Cairo';
+    $workDate = $request->date ?? now($tz)->toDateString();
 
-        $tz = 'Africa/Cairo';
-        $workDate = $request->date ?? now($tz)->toDateString();
+    $employee = Employee::findOrFail($data['employee_id']);
+    $shift = $employee->employment_type_id ? Shift::find($employee->employment_type_id) : null;
+    $employmentType = $shift?->name_en ?? 'part_time';
+    $partTimeType = $employee->part_time_type ?? null;
 
-        $employee = Employee::findOrFail($data['employee_id']);
-        $shift = $employee->employment_type_id ? Shift::find($employee->employment_type_id) : null;
-        $employmentType = $shift?->name_en ?? 'part_time';
-        $partTimeType = $employee->part_time_type ?? null; // hours | days
+    $isFullTime      = $employmentType === 'full_time';
+    $isPartTimeHours = $employmentType === 'part_time' && $partTimeType === 'hours';
+    $isPartTimeDays  = $employmentType === 'part_time' && $partTimeType === 'days';
 
-        $isFullTime      = $employmentType === 'full_time';
-        $isPartTimeHours = $employmentType === 'part_time' && $partTimeType === 'hours';
-        $isPartTimeDays  = $employmentType === 'part_time' && $partTimeType === 'days';
+    if ($data['check_in'] === $data['check_out']) {
+        return response()->json(['error' => 'check_in and check_out cannot be equal.'], 422);
+    }
 
-        if ($data['check_in'] === $data['check_out']) {
-            return response()->json(['error' => 'check_in and check_out cannot be equal.'], 422);
+    $checkIn  = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_in']}", $tz);
+    $checkOut = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_out']}", $tz);
+    if ($checkOut->lt($checkIn)) $checkOut->addDay();
+
+    $shiftStart = null;
+    $shiftEnd   = null;
+    $requiredHours = 0;
+
+    if ($isPartTimeHours) {
+        if (empty($employee->monthly_hours_required) || $employee->monthly_hours_required <= 0) {
+            return response()->json(['error' => 'Total monthly hours not configured for this part-time-hours employee.'], 422);
         }
 
-        $checkIn  = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_in']}", $tz);
-        $checkOut = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$data['check_out']}", $tz);
-        if ($checkOut->lt($checkIn)) $checkOut->addDay();
+        $existingAttendance = Attendance::where('employee_id', $employee->id)
+            ->where('date', $workDate)
+            ->first();
 
-        $shiftStart = null;
-        $shiftEnd   = null;
+        if ($existingAttendance) {
+            $checkIn  = min(Carbon::parse($existingAttendance->check_in), $checkIn);
+            $checkOut = max(Carbon::parse($existingAttendance->check_out), $checkOut);
+        }
         $requiredHours = 0;
+    } elseif ($isPartTimeDays) {
+        $dayName = Carbon::parse($workDate, $tz)->format('l');
+        $days = json_decode($employee->weekly_work_days, true) ?? [];
 
-        if ($isPartTimeHours) {
-            if (empty($employee->monthly_hours_required) || $employee->monthly_hours_required <= 0) {
-                return response()->json(['error' => 'Total monthly hours not configured for this part-time-hours employee.'], 422);
-            }
-
-            $existingAttendance = Attendance::where('employee_id', $employee->id)
-                ->where('date', $workDate)
-                ->first();
-
-            if ($existingAttendance) {
-                $checkIn  = min(Carbon::parse($existingAttendance->check_in), $checkIn);
-                $checkOut = max(Carbon::parse($existingAttendance->check_out), $checkOut);
-            }
-            $requiredHours = 0;
-        } elseif ($isPartTimeDays) {
-            $dayName = Carbon::parse($workDate, $tz)->format('l');
-            $days = json_decode($employee->weekly_work_days, true) ?? [];
-
-        //   $workDay = collect($days)->firstWhere('day', $dayName);
-
-             $workDay = collect($days)->first(function ($d) use ($dayName) {
-    return strtolower($d['day']) === strtolower($dayName);
-});
-
-
-            if (!$workDay || empty($workDay['start_time']) || empty($workDay['end_time'])) {
-                return response()->json(['error' => 'Work day times missing for this employee.'], 422);
-            }
-
-            $shiftStart = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$workDay['start_time']}", $tz);
-            $shiftEnd   = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$workDay['end_time']}", $tz);
-            if ($shiftEnd->lte($shiftStart)) $shiftEnd->addDay();
-            $requiredHours = $shiftStart->diffInMinutes($shiftEnd) / 60;
-        } else {
-            // Full Time → ثابت من 08:00 إلى 17:00
-            $shiftStart = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} 08:00", $tz);
-            $shiftEnd   = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} 17:00", $tz);
-            $requiredHours = $shiftStart->diffInMinutes($shiftEnd) / 60;
-        }
-
-        $workedMinutes = (int) $checkIn->diffInMinutes($checkOut);
-        $workedHours   = $workedMinutes / 60;
-
-        $lateMinutes = $shiftStart ? max(0, (int)$shiftStart->diffInMinutes($checkIn)) : 0;
-        $earlyLeave  = $shiftEnd ? max(0, (int)$checkOut->diffInMinutes($shiftEnd)) : 0;
-        $deficitMinutes = $earlyLeave;
-
-        $overtimeMinutes = 0;
-        if (!$isPartTimeHours && $requiredHours > 0 && $workedMinutes > ($requiredHours * 60)) {
-            $overtimeMinutes = (int)($workedMinutes - ($requiredHours * 60));
-        }
-
-        $policy = AttendancePolicy::first();
-        $grace  = (int)($policy->late_grace_minutes ?? 0);
-        if ($lateMinutes > 0 && $lateMinutes <= $grace) $lateMinutes = 0;
-
-        DB::transaction(function () use (
-            $employee,
-            $checkIn,
-            $checkOut,
-            $workedMinutes,
-            $lateMinutes,
-            $earlyLeave,
-            $overtimeMinutes,
-            $deficitMinutes,
-            $shift,
-            $policy,
-            $workDate,
-            $isPartTimeHours,
-            $employmentType
-        ) {
-            Attendance::updateOrCreate(
-                ['employee_id' => $employee->id, 'date' => $workDate],
-                [
-                    'check_in'             => $checkIn->format('H:i:s'),
-                    'check_out'            => $checkOut->format('H:i:s'),
-                    'total_hours'          => round($workedMinutes / 60, 2),
-                    'late_minutes'         => $lateMinutes,
-                    'overtime_minutes'     => $isPartTimeHours ? 0 : $overtimeMinutes,
-                    'status'               => 'present',
-                    'fingerprint_verified' => true,
-                ]
-            );
-
-            AttendanceDay::updateOrCreate(
-                ['employee_id' => $employee->id, 'work_date' => $workDate],
-                [
-                    'branch_id'            => $employee->branch_id,
-                    'break_minutes'        => (int)($shift?->break_minutes ?? 0),
-                    'first_in_at'          => $checkIn,
-                    'last_out_at'          => $checkOut,
-                    'worked_minutes'       => (int)$workedMinutes,
-                    'overtime_minutes'     => (int)$overtimeMinutes,
-                    'deficit_minutes'      => (int)$deficitMinutes,
-                    'late_minutes'         => (int)$lateMinutes,
-                    'early_leave_minutes'  => (int)$earlyLeave,
-                    'punches_count'        => 2,
-                    'day_type'             => 'workday',
-                    'status'               => 'complete',
-                    'components'           => [
-                        'shift'  => $shift?->name_en,
-                        'policy' => $policy->name ?? 'N/A',
-                        'employment_type' => $employmentType,
-                        'part_time_type'   => $employee->part_time_type,
-                    ],
-                ]
-            );
+        $workDay = collect($days)->first(function ($d) use ($dayName) {
+            return strtolower($d['day']) === strtolower($dayName);
         });
 
-        // ملخص شهري للـ Part Time Hours
-        $monthlySummary = null;
-        if ($isPartTimeHours) {
-            $month = Carbon::parse($workDate)->format('m');
-            $year  = Carbon::parse($workDate)->format('Y');
-
-            $monthlyWorkedHours = (float) Attendance::where('employee_id', $employee->id)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->sum('total_hours');
-
-            $requiredMonthlyHours = (float) ($employee->total_hours ?? 0);
-
-            if ($monthlyWorkedHours > $requiredMonthlyHours) {
-                $monthlyOvertimeHours = round($monthlyWorkedHours - $requiredMonthlyHours, 2);
-                $monthlyDeficitHours = 0;
-            } else {
-                $monthlyOvertimeHours = 0;
-                $monthlyDeficitHours = round($requiredMonthlyHours - $monthlyWorkedHours, 2);
-            }
-
-            $monthlySummary = [
-                'monthly_worked_hours'  => $monthlyWorkedHours,
-                'monthly_required_hours' => $requiredMonthlyHours,
-                'monthly_overtime_hours' => $monthlyOvertimeHours,
-                'monthly_deficit_hours'  => $monthlyDeficitHours,
-            ];
+        if (!$workDay || empty($workDay['start_time']) || empty($workDay['end_time'])) {
+            return response()->json(['error' => 'Work day times missing for this employee.'], 422);
         }
 
-        return response()->json([
-            'message'             => '✅ Attendance calculated & saved successfully',
-            'worked_minutes'      => $workedMinutes,
-            'total_hours'         => round($workedMinutes / 60, 2),
-            'overtime_minutes'    => $overtimeMinutes,
-            'late_minutes'        => $lateMinutes,
-            'early_leave_minutes' => $earlyLeave,
-            'monthly_summary'     => $monthlySummary,
-        ]);
+        $shiftStart = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$workDay['start_time']}", $tz);
+        $shiftEnd   = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} {$workDay['end_time']}", $tz);
+        if ($shiftEnd->lte($shiftStart)) $shiftEnd->addDay();
+        $requiredHours = $shiftStart->diffInMinutes($shiftEnd) / 60;
+    } else {
+        // Full Time → ثابت من 08:00 إلى 17:00
+        $shiftStart = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} 08:00", $tz);
+        $shiftEnd   = Carbon::createFromFormat('Y-m-d H:i', "{$workDate} 17:00", $tz);
+        $requiredHours = $shiftStart->diffInMinutes($shiftEnd) / 60;
     }
+
+    $workedMinutes = (int) $checkIn->diffInMinutes($checkOut);
+    $workedHours   = $workedMinutes / 60;
+
+    $lateMinutes = $shiftStart ? max(0, (int)$shiftStart->diffInMinutes($checkIn)) : 0;
+    $earlyLeave  = $shiftEnd ? max(0, (int)$checkOut->diffInMinutes($shiftEnd)) : 0;
+    $deficitMinutes = $earlyLeave;
+
+    // ===== حساب الأوفرتايم لكل أنواع الموظفين =====
+    $overtimeMinutes = 0;
+    if ($isPartTimeHours) {
+        $dailyRequiredMinutes = ($employee->monthly_hours_required / 30) * 60; // تقريبًا
+        if ($workedMinutes > $dailyRequiredMinutes) {
+            $overtimeMinutes = (int)($workedMinutes - $dailyRequiredMinutes);
+        }
+    } else {
+        if ($requiredHours > 0 && $workedMinutes > ($requiredHours * 60)) {
+            $overtimeMinutes = (int)($workedMinutes - ($requiredHours * 60));
+        }
+    }
+
+    $policy = AttendancePolicy::first();
+    $grace  = (int)($policy->late_grace_minutes ?? 0);
+    if ($lateMinutes > 0 && $lateMinutes <= $grace) $lateMinutes = 0;
+
+    DB::transaction(function () use (
+        $employee,
+        $checkIn,
+        $checkOut,
+        $workedMinutes,
+        $lateMinutes,
+        $earlyLeave,
+        $overtimeMinutes,
+        $deficitMinutes,
+        $shift,
+        $policy,
+        $workDate,
+        $employmentType
+    ) {
+        $attendance = Attendance::updateOrCreate(
+            ['employee_id' => $employee->id, 'date' => $workDate],
+            [
+                'check_in'             => $checkIn->format('H:i:s'),
+                'check_out'            => $checkOut->format('H:i:s'),
+                'total_hours'          => round($workedMinutes / 60, 2),
+                'late_minutes'         => $lateMinutes,
+                'overtime_minutes'     => $overtimeMinutes,
+                'status'               => 'present',
+                'fingerprint_verified' => true,
+            ]
+        );
+
+        AttendanceDay::updateOrCreate(
+            ['employee_id' => $employee->id, 'work_date' => $workDate],
+            [
+                'attendance_id'        => $attendance->id,
+                'branch_id'            => $employee->branch_id,
+                'break_minutes'        => (int)($shift?->break_minutes ?? 0),
+                'first_in_at'          => $checkIn,
+                'last_out_at'          => $checkOut,
+                'worked_minutes'       => (int)$workedMinutes,
+                'overtime_minutes'     => (int)$overtimeMinutes,
+                'deficit_minutes'      => (int)$deficitMinutes,
+                'late_minutes'         => (int)$lateMinutes,
+                'early_leave_minutes'  => (int)$earlyLeave,
+                'punches_count'        => 2,
+                'day_type'             => 'workday',
+                'status'               => 'complete',
+                'components'           => [
+                    'shift'           => $shift?->name_en,
+                    'policy'          => $policy->name ?? 'N/A',
+                    'employment_type' => $employmentType,
+                    'part_time_type'  => $employee->part_time_type,
+                ],
+            ]
+        );
+    });
+
+    // ملخص شهري للـ Part Time Hours
+    $monthlySummary = null;
+    if ($isPartTimeHours) {
+        $month = Carbon::parse($workDate)->format('m');
+        $year  = Carbon::parse($workDate)->format('Y');
+
+        $monthlyWorkedHours = (float) Attendance::where('employee_id', $employee->id)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->sum('total_hours');
+
+        $requiredMonthlyHours = (float) ($employee->total_hours ?? 0);
+
+        if ($monthlyWorkedHours > $requiredMonthlyHours) {
+            $monthlyOvertimeHours = round($monthlyWorkedHours - $requiredMonthlyHours, 2);
+            $monthlyDeficitHours = 0;
+        } else {
+            $monthlyOvertimeHours = 0;
+            $monthlyDeficitHours = round($requiredMonthlyHours - $monthlyWorkedHours, 2);
+        }
+
+        $monthlySummary = [
+            'monthly_worked_hours'   => $monthlyWorkedHours,
+            'monthly_required_hours' => $requiredMonthlyHours,
+            'monthly_overtime_hours' => $monthlyOvertimeHours,
+            'monthly_deficit_hours'  => $monthlyDeficitHours,
+        ];
+    }
+
+    return response()->json([
+        'message'             => '✅ Attendance calculated & saved successfully',
+        'worked_minutes'      => $workedMinutes,
+        'total_hours'         => round($workedMinutes / 60, 2),
+        'overtime_minutes'    => $overtimeMinutes,
+        'late_minutes'        => $lateMinutes,
+        'early_leave_minutes' => $earlyLeave,
+        'monthly_summary'     => $monthlySummary,
+    ]);
+}
+
 
 
 
@@ -528,35 +533,46 @@ class AttendanceController extends Controller
 
 
 
+public function destroy(Attendance $attendance)
+{
+    DB::transaction(function () use ($attendance) {
+        optional($attendance->day)->delete();
+        $attendance->delete();
+    });
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Attendance deleted successfully'
+    ]);
+}
 
 
+    // public function destroy(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'employee_id' => 'required|exists:employees,id',
+    //         'date'        => 'required|date'
+    //     ]);
 
-    public function destroy(Request $request)
-    {
-        $data = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'date'        => 'required|date'
-        ]);
+    //     $employeeId = $data['employee_id'];
+    //     $date       = $data['date'];
 
-        $employeeId = $data['employee_id'];
-        $date       = $data['date'];
+    //     DB::transaction(function () use ($employeeId, $date) {
 
-        DB::transaction(function () use ($employeeId, $date) {
+    //         // ❌ حذف سجل البصمة
+    //         Attendance::where('employee_id', $employeeId)
+    //             ->where('date', $date)
+    //             ->delete();
 
-            // ❌ حذف سجل البصمة
-            Attendance::where('employee_id', $employeeId)
-                ->where('date', $date)
-                ->delete();
+    //         // ❌ حذف سجل AttendanceDay
+    //         AttendanceDay::where('employee_id', $employeeId)
+    //             ->where('work_date', $date)
+    //             ->delete();
+    //     });
 
-            // ❌ حذف سجل AttendanceDay
-            AttendanceDay::where('employee_id', $employeeId)
-                ->where('work_date', $date)
-                ->delete();
-        });
-
-        return response()->json([
-            'status'  => true,
-            'message' => "Attendance deleted successfully"
-        ]);
-    }
+    //     return response()->json([
+    //         'status'  => true,
+    //         'message' => "Attendance deleted successfully"
+    //     ]);
+    // }
 }

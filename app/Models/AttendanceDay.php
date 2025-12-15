@@ -16,6 +16,11 @@ class AttendanceDay extends Model
 
     protected $casts = ['first_in_at' => 'datetime', 'last_out_at' => 'datetime', 'work_date' => 'date', 'components' => 'array'];
 
+// داخل موديل AttendanceDay.php
+public function attendance()
+{
+    return $this->belongsTo(Attendance::class, 'attendance_id'); 
+}
 
 
     public function attendancePolicy()
@@ -149,7 +154,7 @@ class AttendanceDay extends Model
                 if (!is_array($weeklyDays) || empty($weeklyDays)) {
                     if ($employmentType === 'full time') {
                         $weeklyDays = [
-                            ['day' => $dayName, 'start_time' => '08:00', 'end_time' => '17:00']
+                            ['day' => $dayName, 'start_time' => '10:00', 'end_time' => '19:00']
                         ];
                     } else return false;
                 }
@@ -203,11 +208,12 @@ class AttendanceDay extends Model
 
     public static function getDailySummary($day)
     {
-        $records = self::with(['employee', 'employee.position', 'employee.shift'])
+        $records = self::with(['employee', 'employee.position', 'employee.shift','attendance'])
             ->where('work_date', $day)
+            ->whereNull('deleted_at')
             ->get();
 
-        $summary = $records->groupBy('employee_id')->map(function ($employeeRecords, $employeeId) use ($day) {
+        $summary = $records ->groupBy('employee_id')->map(function ($employeeRecords, $employeeId) use ($day) {
             $employee = $employeeRecords->first()->employee;
 
             if (!$employee) return null;
@@ -242,6 +248,8 @@ class AttendanceDay extends Model
 
 
             return [
+               'attendance_id' => optional($employeeRecords->first()->attendance)->id,
+
                 'id' => $employeeId,
                 'employee' => [
                     'code' => $employee->code ?? null,

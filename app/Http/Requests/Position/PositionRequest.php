@@ -41,4 +41,20 @@ class PositionRequest extends FormRequest
 
         ];
     }
+
+
+
+     public function messages(): array
+    {
+        return [
+          
+            'title_en.required' => '⚠️This position is not avaliable for that branch.',
+                
+        ];
+    }
+
+
+   
+
 }
+

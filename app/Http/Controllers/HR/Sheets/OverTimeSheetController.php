@@ -56,74 +56,204 @@ class OverTimeSheetController extends Controller
     // }
 
 
-    public function index(Request $request)
-    {
-        $employeeId = $request->employee_id;
-        $month      = $request->month;
+    // public function index(Request $request)
+    // {
+    //     $employeeId = $request->employee_id;
+    //     $month      = $request->month;
 
-        if (!$employeeId || !$month) {
-            return response()->json(['error' => 'employee_id and month are required'], 422);
+    //     if (!$employeeId || !$month) {
+    //         return response()->json(['error' => 'employee_id and month are required'], 422);
+    //     }
+
+    //     $employee = Employee::find($employeeId);
+    //     if (!$employee) {
+    //         return response()->json(['error' => 'Employee not found'], 404);
+    //     }
+
+    //     $employmentType = $employee->shift?->name_en;   // full_time | part_time
+    //     $partTimeType   = $employee->part_time_type;    // hours | days
+
+    //     $isFullTime     = $employmentType === 'full_time';
+    //     $isPT_Hours     = $employmentType === 'part_time' && $partTimeType === 'hours';
+    //     $isPT_Days      = $employmentType === 'part_time' && $partTimeType === 'days';
+
+    //     $tz = 'Africa/Cairo';
+
+    //     // نجيب الاوفر تايم من جدول attendance
+    //     $records = Attendance::where('employee_id', $employeeId)
+    //         ->whereMonth('date', Carbon::parse($month)->month)
+    //         ->where('overtime_minutes', '>', 0)
+    //         ->get();
+
+    //     $overtime = $records->map(function ($r) use ($employee, $isFullTime, $isPT_Days, $isPT_Hours, $tz) {
+
+    //         $date = Carbon::parse($r->date, $tz);
+    //         $dayName = $date->format('l'); // Monday, Tuesday ...
+
+    //         $endShiftTime = null;
+
+    //         if ($isFullTime || $isPT_Days) {
+
+    //             // 🟦 weekly work days موجودة جوة جدول الموظفين
+    //             $days = $employee->days ?? [];
+
+    //             $todayShift = collect($days)->firstWhere('day', $dayName);
+
+    //             if ($todayShift) {
+    //                 $endShiftTime = $todayShift['end_time'] ?? null;
+    //             }
+    //         } elseif ($isPT_Hours) {
+    //             // Part time hours → مفيش اى end_time ثابت
+    //             $endShiftTime = null;
+    //         }
+
+    //         return [
+    //             'id'             => $r->id,
+    //             'date'           => $r->date,
+    //             'end_shift_time' => $endShiftTime,   // ← تم التعديل
+    //             'check_in'       => $r->check_in,
+    //             'check_out'      => $r->check_out,
+    //             'overtime'       => $r->overtime_minutes,
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'employee_id' => $employeeId,
+    //         'month'       => $month,
+    //         'overtime'    => $overtime->values(),
+    //     ]);
+    // }
+
+   public function index(Request $request)
+{
+    $employeeId = $request->employee_id;
+    $month      = $request->month;
+
+    if (!$employeeId || !$month) {
+        return response()->json(['error' => 'employee_id and month are required'], 422);
+    }
+
+    $employee = Employee::with(['shift', 'workDays'])->find($employeeId);
+    if (!$employee) {
+        return response()->json(['error' => 'Employee not found'], 404);
+    }
+
+    $tz = 'Africa/Cairo';
+
+    // normalize shift name
+    $employmentType = strtolower(trim($employee->shift?->name_en ?? ''));
+    $partTimeType   = strtolower(trim($employee->part_time_type ?? ''));
+
+    $isFullTime = in_array($employmentType, ['full time', 'full_time']);
+    $isPT_Hours = in_array($employmentType, ['part time', 'part_time']) && $partTimeType === 'hours';
+    $isPT_Days  = in_array($employmentType, ['part time', 'part_time']) && $partTimeType === 'days';
+
+    $monthCarbon = Carbon::parse($month, $tz);
+    $records = Attendance::where('employee_id', $employeeId)
+        ->whereYear('date', $monthCarbon->year)
+        ->whereMonth('date', $monthCarbon->month)
+        ->orderBy('date')
+        ->get();
+
+    // ===== Part Time Hours (Monthly threshold, cumulative) =====
+    if ($isPT_Hours) {
+        $requiredMonthlyMinutes = (float)($employee->monthly_hours_required ?? 0) * 60;
+
+        // لو required مش متحدد
+        if ($requiredMonthlyMinutes <= 0) {
+            return response()->json([
+                'error' => 'monthly_hours_required not configured for this employee'
+            ], 422);
         }
 
-        $employee = Employee::find($employeeId);
-        if (!$employee) {
-            return response()->json(['error' => 'Employee not found'], 404);
-        }
+        $cumulative = 0.0;
 
-        $employmentType = $employee->shift?->name_en;   // full_time | part_time
-        $partTimeType   = $employee->part_time_type;    // hours | days
+        $overtime = $records->map(function ($r) use (&$cumulative, $requiredMonthlyMinutes, $tz) {
+            $workedMinutes = (float)$r->total_hours * 60;
 
-        $isFullTime     = $employmentType === 'full_time';
-        $isPT_Hours     = $employmentType === 'part_time' && $partTimeType === 'hours';
-        $isPT_Days      = $employmentType === 'part_time' && $partTimeType === 'days';
+            $before = $cumulative;
+            $after  = $cumulative + $workedMinutes;
 
-        $tz = 'Africa/Cairo';
+            $overtimeBefore = max(0, $before - $requiredMonthlyMinutes);
+            $overtimeAfter  = max(0, $after  - $requiredMonthlyMinutes);
 
-        // نجيب الاوفر تايم من جدول attendance
-        $records = Attendance::where('employee_id', $employeeId)
-            ->whereMonth('date', Carbon::parse($month)->month)
-            ->where('overtime_minutes', '>', 0)
-            ->get();
+            $overtimeToday = (int) round($overtimeAfter - $overtimeBefore);
 
-        $overtime = $records->map(function ($r) use ($employee, $isFullTime, $isPT_Days, $isPT_Hours, $tz) {
+            $cumulative = $after;
 
-            $date = Carbon::parse($r->date, $tz);
-            $dayName = $date->format('l'); // Monday, Tuesday ...
-
-            $endShiftTime = null;
-
-            if ($isFullTime || $isPT_Days) {
-
-                // 🟦 weekly work days موجودة جوة جدول الموظفين
-                $days = $employee->days ?? [];
-
-                $todayShift = collect($days)->firstWhere('day', $dayName);
-
-                if ($todayShift) {
-                    $endShiftTime = $todayShift['end_time'] ?? null;
-                }
-            } elseif ($isPT_Hours) {
-                // Part time hours → مفيش اى end_time ثابت
-                $endShiftTime = null;
-            }
-
-            return [
-                'id'             => $r->id,
-                'date'           => $r->date,
-                'end_shift_time' => $endShiftTime,   // ← تم التعديل
-                'check_in'       => $r->check_in,
-                'check_out'      => $r->check_out,
-                'overtime'       => $r->overtime_minutes,
-            ];
-        });
+            return $overtimeToday > 0 ? [
+                'id'       => $r->id,
+                'date'     => $r->date,
+                'check_in' => $r->check_in,
+                'check_out'=> $r->check_out,
+                'overtime' => $overtimeToday, // minutes
+            ] : null;
+        })->filter()->values();
 
         return response()->json([
             'employee_id' => $employeeId,
-            'month'       => $month,
-            'overtime'    => $overtime->values(),
+            'month'       => $monthCarbon->format('Y-m'),
+            'overtime'    => $overtime,
         ]);
     }
 
+    // ===== Full Time / Part Time Days (Daily required) =====
+    $overtime = $records->map(function ($r) use ($employee, $isFullTime, $isPT_Days, $tz) {
+
+        $date    = Carbon::parse($r->date, $tz);
+        $dayName = strtolower($date->format('l'));
+
+        $workedMinutes = (float)$r->total_hours * 60;
+
+        $dailyRequiredMinutes = null;
+        $endShiftTime = null;
+
+        // الأفضل: اقرأ من workDays table لو موجود
+        $wd = $employee->workDays
+            ? $employee->workDays->first(fn($d) => strtolower($d->day ?? '') === $dayName)
+            : null;
+
+        if ($wd && $wd->start_time && $wd->end_time) {
+            $start = Carbon::parse($date->toDateString().' '.$wd->start_time, $tz);
+            $end   = Carbon::parse($date->toDateString().' '.$wd->end_time, $tz);
+            if ($end->lte($start)) $end->addDay();
+
+            $dailyRequiredMinutes = $start->diffInMinutes($end);
+            $endShiftTime = $wd->end_time;
+        } else {
+            // fallback
+            if ($isFullTime) {
+                $start = Carbon::parse($date->toDateString().' 08:00', $tz);
+                $end   = Carbon::parse($date->toDateString().' 17:00', $tz);
+                $dailyRequiredMinutes = $start->diffInMinutes($end);
+                $endShiftTime = '17:00';
+            } elseif ($isPT_Days) {
+                // لو PT days ومفيش schedule لليوم ده => ماينفعش نحسب overtime عليه (بدون required)
+                return null;
+            }
+        }
+
+        if (!$dailyRequiredMinutes || $dailyRequiredMinutes <= 0) return null;
+
+        $overtimeMinutes = (int) max(0, $workedMinutes - $dailyRequiredMinutes);
+
+        return $overtimeMinutes > 0 ? [
+            'id'             => $r->id,
+            'date'           => $r->date,
+            'end_shift_time' => $endShiftTime,
+            'check_in'       => $r->check_in,
+            'check_out'      => $r->check_out,
+            'overtime'       => $overtimeMinutes,
+        ] : null;
+
+    })->filter()->values();
+
+    return response()->json([
+        'employee_id' => $employeeId,
+        'month'       => $monthCarbon->format('Y-m'),
+        'overtime'    => $overtime,
+    ]);
+}
 
 
 

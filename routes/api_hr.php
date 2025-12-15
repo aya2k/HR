@@ -100,7 +100,7 @@ Route::prefix('hr/v1')->group(function () {
             // Attendance & Policies
             Route::apiResource('attendances', AttendanceController::class)
                 ;
-            Route::delete('/attendances', [AttendanceController::class, 'destroy']);
+            Route::delete('/attendances/{attendance}', [AttendanceController::class, 'destroy']);   
             Route::patch('/attendances/{employeeId}', [AttendanceController::class, 'update']);
             Route::apiResource('attendance-policies', AttendancePolicyController::class);
             Route::get('{Id}/monthly-report/{month}', [AttendanceController::class, 'getMonhlyReport']);

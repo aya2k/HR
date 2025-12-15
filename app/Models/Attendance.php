@@ -22,6 +22,10 @@ class Attendance extends Model
         'late_minutes'       => 'float',
     ];
 
-   
+   public function day()
+{
+    return $this->hasOne(AttendanceDay::class);
+}
+
 
 }
