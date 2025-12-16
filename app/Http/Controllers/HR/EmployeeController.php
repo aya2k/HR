@@ -30,7 +30,7 @@ class EmployeeController extends Controller
 
         try {
             // ============================
-            // 1️⃣ إنشاء Applicant
+            // Applicant
             // ============================
             $data = collect($request->validated())
                 ->except(['educations', 'experiences', 'skills', 'languages', 'employee'])
@@ -54,7 +54,7 @@ class EmployeeController extends Controller
             $applicant->save();
 
             // ============================
-            // 2️⃣ رفع ملفات التعليم
+            // 
             // ============================
             if ($request->has('educations')) {
                 foreach ($request->educations as $edu) {
@@ -72,7 +72,7 @@ class EmployeeController extends Controller
             }
 
             // ============================
-            // 3️⃣ رفع العلاقات الأخرى
+            // 
             // ============================
             foreach (['experiences', 'skills', 'languages'] as $relation) {
                 if ($request->has($relation)) {
@@ -83,7 +83,7 @@ class EmployeeController extends Controller
             }
 
             // ============================
-            // 4️⃣ إنشاء الموظف Employee
+            // 
             // ============================
             if ($request->has('employee')) {
                 $employeeData = $request->employee;
@@ -111,11 +111,7 @@ class EmployeeController extends Controller
 
                 $employeeData['position_id'] = $employeeData['position_id'] ?? Position::first()?->id;
 
-                // if (!($employeeData['is_sales'] ?? false)) {
-                //     $employeeData['commission_percentage'] = 0;
-                // }
-
-                // رفع العقود
+               
                 if (!empty($employeeData['contracts'])) {
                     $uploadedContracts = [];
                     foreach ($employeeData['contracts'] as $contract) {
@@ -141,10 +137,7 @@ class EmployeeController extends Controller
                     $employeeData['weekly_work_days'] = json_encode($employeeData['days']);
                 }
 
-                // part_time (hours) → تخزين total_hours في monthly_hours_required
-                // if ($employmentType === 'part time' && ($employeeData['part_time_type'] ?? null) === 'hours') {
-                //     $employeeData['monthly_hours_required'] = $employeeData['total_hours'] ?? null;
-                // }
+               
 
                 if (($employmentType === 'part time') && !empty($employeeData['monthly_hours_required'])) {
                     $employeeData['part_time_type'] = 'hours';
@@ -152,16 +145,16 @@ class EmployeeController extends Controller
 
                 $employeeData['status'] = 'accepted';
 
-                // إزالة days بعد التحويل
+               
                 if (isset($employeeData['days'])) {
                     unset($employeeData['days']);
                 }
 
-                // إنشاء الموظف
+                
                 $employee = Employee::create($employeeData);
 
                 // ============================
-                // إنشاء جدول workDays
+                // workDays
                 // ============================
                 $days = [];
                 if (isset($employeeData['weekly_work_days'])) {
@@ -179,7 +172,7 @@ class EmployeeController extends Controller
                 }
 
                 // ============================
-                // روابط الفروع
+                //
                 // ============================
                 if ($branches) {
                     if (!is_array($branches)) $branches = [$branches];
@@ -213,7 +206,7 @@ class EmployeeController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | 1) فلتر الـ keyword (name + phone + code)
+    | 1) keyword (name + phone + code)
     |--------------------------------------------------------------------------
     */
         if ($request->filled('keyword')) {
@@ -231,7 +224,7 @@ class EmployeeController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | 2) فلتر department_id
+    | 2)  department_id
     |--------------------------------------------------------------------------
     */
         if ($request->filled('department_id')) {
@@ -240,7 +233,7 @@ class EmployeeController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | 3) فلتر shift_id
+    | 3)  shift_id
     |--------------------------------------------------------------------------
     */
         if ($request->filled('shift_id')) {
@@ -249,7 +242,7 @@ class EmployeeController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | 4) فلتر position_id
+    | 4)  position_id
     |--------------------------------------------------------------------------
     */
         if ($request->filled('position_id')) {
@@ -282,7 +275,7 @@ class EmployeeController extends Controller
 
 
 
-    // 🟢 عرض موظف محدد
+  
     public function show($id)
     {
         $employee = Employee::with(['applicant', 'department', 'position', 'branches', 'company'])->findOrFail($id);
@@ -291,7 +284,7 @@ class EmployeeController extends Controller
 
 
 
-    // 🟢 تعديل بيانات الموظف
+    
     public function update(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
@@ -325,7 +318,7 @@ class EmployeeController extends Controller
         ]);
     }
 
-    // 🟢 حذف موظف
+    
     public function destroy($id)
     {
         $employee = Employee::findOrFail($id);
@@ -339,7 +332,7 @@ class EmployeeController extends Controller
 
     public function exportData(Request $request)
     {
-        // نتأكد إنها مصفوفة IDs
+       
         $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:employees,id'
@@ -379,10 +372,10 @@ class EmployeeController extends Controller
 
     public function header()
     {
-        // إجمالي عدد الموظفين
+       
         $total_employees = Employee::count();
 
-        // عدد الذكور
+        
         $male_count = Employee::whereHas('applicant', function ($q) {
             $q->where('gender', 'male');
         })->count();
@@ -392,7 +385,7 @@ class EmployeeController extends Controller
         })->count();
 
 
-        // عدد الموظفين الجدد خلال آخر شهر
+    
         $new_employees = Employee::where('join_date', '>=', now()->subMonth())->count();
 
         return response()->json([

@@ -30,13 +30,13 @@ class MonthlyAttendanceController extends Controller
         $keyword = $request->query('keyword');
         $month   = $request->query('month', now()->format('Y-m'));
 
-        // limit من الفرونت (افتراضي 10)
+        
         $limit = $request->integer('limit', 10);
 
-        // جواب كل الداتا
+       
         $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $keyword);
 
-        // نحوله Collection ونعمله paginate manually
+       
         $page = $request->get('page', 1);
         $collection = collect($summary);
 
@@ -65,18 +65,18 @@ class MonthlyAttendanceController extends Controller
 
     public function exportMonthlyReportAllPdf(Request $request)
     {
-        $from   = $request->query('from');   // تاريخ البداية اختياري
-        $to     = $request->query('to');     // تاريخ النهاية اختياري
-        $branch = $request->query('branch'); // فلتر فرع اختياري
-        $code   = $request->query('code');   // فلتر كود اختياري
-        $name   = $request->query('name');   // فلتر اسم اختياري
-        $phone  = $request->query('phone');  // فلتر هاتف اختياري
-        $month  = $request->query('month', now()->format('Y-m')); // الشهر المطلوب
+        $from   = $request->query('from');   
+        $to     = $request->query('to');     
+        $branch = $request->query('branch'); 
+        $code   = $request->query('code');   
+        $name   = $request->query('name');   
+        $phone  = $request->query('phone'); 
+        $month  = $request->query('month', now()->format('Y-m')); 
 
-        // جلب البيانات لجميع الموظفين باستخدام الفانكشن الموجود
+       
         $summary = AttendanceDay::getMonthlySummaryAll($month, $from, $to, $branch, $code, $name, $phone);
 
-        // توليد PDF
+      
         $pdf = Pdf::loadView('Sheets.monthly_report', [
             'summary' => $summary,
             'month'   => $month,
@@ -106,7 +106,7 @@ class MonthlyAttendanceController extends Controller
 
         /*
      |--------------------------------------
-     | فلتر 1: keyword (name OR phone OR code)
+     |  keyword (name OR phone OR code)
      |--------------------------------------
     */
         if ($request->has('keyword') && !empty($request->keyword)) {
@@ -127,7 +127,7 @@ class MonthlyAttendanceController extends Controller
 
         /*
      |--------------------------------------
-     | فلتر 2: department
+     |  department
      |--------------------------------------
     */
         if ($request->has('department') && !empty($request->department)) {
@@ -144,7 +144,7 @@ class MonthlyAttendanceController extends Controller
 
         /*
      |--------------------------------------
-     | الـ Pagination اليدوي
+     |  Pagination 
      |--------------------------------------
     */
         $page = $request->query('page', 1);

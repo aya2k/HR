@@ -34,111 +34,99 @@ use App\Http\Controllers\HR\GeneralController;
 
 
 Route::prefix('hr/v1')->group(function () {
+
+    Route::post('login', [AuthController::class, 'login']);
+
+    //home Home_header
+
+    Route::get('home-header', [GeneralController::class, 'Home_header']);
+
+    // Companies
+    Route::apiResource('companies', CompanyController::class);
+
+    // Branches
+    Route::apiResource('branches', BranchController::class);
+
+    // Positions
+    Route::apiResource('positions', PositionController::class);
+
+    // Shifts
+    Route::apiResource('shifts', ShiftController::class);
+
+    // Departments
+    Route::apiResource('departments', DepartmentController::class);
+
+    // Locations
+    Route::get('countries', [LocationController::class, 'countries']);
+    Route::get('countries/{country}/governorates', [LocationController::class, 'governorates']);
+
+    // Formal occasions
    
-             Route::post('login', [AuthController::class, 'login']);
+    Route::get('/list', [EmployeeController::class, 'simpleList']);
+    Route::get('/header', [EmployeeController::class, 'header']);
+    // Employees
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeController::class, 'index']);
+        Route::get('{id}', [EmployeeController::class, 'show']);
+        Route::post('/', [EmployeeController::class, 'store']);
+        Route::put('{id}', [EmployeeController::class, 'update']);
+        Route::delete('{id}', [EmployeeController::class, 'destroy']);
+        Route::post('/export-data', [EmployeeController::class, 'exportData']);
+    });
 
-             //home Home_header
+    // Head Managers
+    Route::get('/head-managers', [HeadMangerController::class, 'getManagers']);
+    Route::post('/{id}/head-managers', [HeadMangerController::class, 'addAsManager']);
+    Route::post('/{id}/remove-managers', [HeadMangerController::class, 'removeManager']);
 
-               Route::get('home-header', [GeneralController::class, 'Home_header']);
+    // Attendance & Policies
+    Route::apiResource('attendances', AttendanceController::class);
+    Route::delete('/attendances/{attendance}', [AttendanceController::class, 'destroy']);
+    Route::patch('/attendances/{employeeId}', [AttendanceController::class, 'update']);
+    Route::apiResource('attendance-policies', AttendancePolicyController::class);
+    Route::get('{Id}/monthly-report/{month}', [AttendanceController::class, 'getMonhlyReport']);
+    Route::get('/monthly-report/{month}', [MonthlyAttendanceController::class, 'getMonthlyReportAll']);
+    Route::get('/monthly-report-pdf', [MonthlyAttendanceController::class, 'exportMonthlyReportAllPdf']);
+    Route::get('/daily-report', [MonthlyAttendanceController::class, 'getDailyReport']);
+    Route::get('/part-time-monthly-report/{month}', [MonthlyAttendanceController::class, 'partTimeHoursReport']);
+    Route::get('/header/{day}', [AttendanceController::class, 'header']);
+    // Sheets
+    Route::post('absents', [AbsentSheetController::class, 'index']);
+    Route::get('/absents/export-pdf', [AbsentSheetController::class, 'exportPdf']);
+    Route::post('over-time', [OverTimeSheetController::class, 'index']);
+    Route::patch('over-time/{id}', [OverTimeSheetController::class, 'update']);
+    Route::delete('over-time/{id}', [OverTimeSheetController::class, 'delete']);
+    Route::get('/over-time-export-pdf', [OverTimeSheetController::class, 'exportPdf']);
+    Route::post('late-time', [IncompleteShiftSheetController::class, 'index']);
+    Route::patch('late-time/{id}', [IncompleteShiftSheetController::class, 'update']);
+    Route::delete('late-time/{id}', [IncompleteShiftSheetController::class, 'delete']);
+    Route::get('/late-time-export-pdf', [IncompleteShiftSheetController::class, 'exportPdf']);
+    Route::post('attendances-sheet', [AttendanceSheetController::class, 'index']);
+    Route::patch('/attendances-sheet/{id}', [AttendanceSheetController::class, 'update']);
+    Route::delete('attendances-sheet/{id}', [AttendanceSheetController::class, 'delete']);
+    Route::get('/attendance-export-pdf', [AttendanceSheetController::class, 'exportPdf']);
+    // Permissions management
+   
+    Route::get('/personal-data/{id}', [EmployeeProfileController::class, 'PersonalData']);
+    Route::get('/activity/{id}', [EmployeeProfileController::class, 'PersonalActivity']);
+    Route::patch('/personal-data/{id}', [EmployeeProfileController::class, 'update']);
+    // Settings
+    Route::get('/settings', [SettingController::class, 'index']);
+    Route::post('/settings', [SettingController::class, 'store']);
+    Route::delete('/settings', [SettingController::class, 'destroy']);
+    Route::apiResource('salary-methods', SalaryMethodController::class);
 
-            // Companies
-            Route::apiResource('companies', CompanyController::class)
-                ;
+    Route::get(
+        '/attendance/daily-summary-cards',
+        [GeneralController::class, 'getDailySummaryCards']
+    );
 
-            // Branches
-            Route::apiResource('branches', BranchController::class)
-                ;
-
-            // Positions
-            Route::apiResource('positions', PositionController::class)
-                ;
-
-            // Shifts
-            Route::apiResource('shifts', ShiftController::class)
-                ;
-
-            // Departments
-            Route::apiResource('departments', DepartmentController::class)
-                ;
-
-            // Locations
-            Route::get('countries', [LocationController::class, 'countries']);
-            Route::get('countries/{country}/governorates', [LocationController::class, 'governorates']);
-
-            // Formal occasions
-            Route::apiResource('formal-occasions', FormalOccasionController::class)
-                ->middleware([
-                    'index' => 'permission:view_formal_occasions',
-                    'store' => 'permission:add_formal_occasion',
-                    'update' => 'permission:edit_formal_occasion',
-                    'destroy' => 'permission:delete_formal_occasion',
-                ]);
-            Route::get('/list', [EmployeeController::class, 'simpleList']);
-            Route::get('/header', [EmployeeController::class, 'header']);
-            // Employees
-            Route::prefix('employees')->group(function () {
-                Route::get('/', [EmployeeController::class, 'index'])
-                   ;
-                Route::get('{id}', [EmployeeController::class, 'show'])
-                   ;
-                Route::post('/', [EmployeeController::class, 'store'])
-                    ;
-                Route::put('{id}', [EmployeeController::class, 'update'])
-                  ;
-                Route::delete('{id}', [EmployeeController::class, 'destroy'])
-                    ;
-                Route::post('/export-data', [EmployeeController::class, 'exportData'])
-                    ;
-            });
-
-            // Head Managers
-            Route::get('/head-managers', [HeadMangerController::class, 'getManagers']);
-            Route::post('/{id}/head-managers', [HeadMangerController::class, 'addAsManager'])
-               ;
-            Route::post('/{id}/remove-managers', [HeadMangerController::class, 'removeManager']);
-
-            // Attendance & Policies
-            Route::apiResource('attendances', AttendanceController::class)
-                ;
-            Route::delete('/attendances/{attendance}', [AttendanceController::class, 'destroy']);   
-            Route::patch('/attendances/{employeeId}', [AttendanceController::class, 'update']);
-            Route::apiResource('attendance-policies', AttendancePolicyController::class);
-            Route::get('{Id}/monthly-report/{month}', [AttendanceController::class, 'getMonhlyReport']);
-            Route::get('/monthly-report/{month}', [MonthlyAttendanceController::class, 'getMonthlyReportAll']);
-            Route::get('/monthly-report-pdf', [MonthlyAttendanceController::class, 'exportMonthlyReportAllPdf']);
-            Route::get('/daily-report', [MonthlyAttendanceController::class, 'getDailyReport']);
-            Route::get('/part-time-monthly-report/{month}', [MonthlyAttendanceController::class, 'partTimeHoursReport']);
-            Route::get('/header/{day}', [AttendanceController::class, 'header']);
-            // Sheets
-            Route::post('absents', [AbsentSheetController::class, 'index']);
-            Route::get('/absents/export-pdf', [AbsentSheetController::class, 'exportPdf']);
-            Route::post('over-time', [OverTimeSheetController::class, 'index']);
-            Route::patch('over-time/{id}', [OverTimeSheetController::class, 'update']);
-            Route::delete('over-time/{id}', [OverTimeSheetController::class, 'delete']);
-            Route::get('/over-time-export-pdf', [OverTimeSheetController::class, 'exportPdf']);
-            Route::post('late-time', [IncompleteShiftSheetController::class, 'index']);
-            Route::patch('late-time/{id}', [IncompleteShiftSheetController::class, 'update']);
-            Route::delete('late-time/{id}', [IncompleteShiftSheetController::class, 'delete']);
-            Route::get('/late-time-export-pdf', [IncompleteShiftSheetController::class, 'exportPdf']);
-            Route::post('attendances-sheet', [AttendanceSheetController::class, 'index']);
-            Route::patch('/attendances-sheet/{id}', [AttendanceSheetController::class, 'update']) ;
-            Route::delete('attendances-sheet/{id}', [AttendanceSheetController::class, 'delete']) ;
-            Route::get('/attendance-export-pdf', [AttendanceSheetController::class, 'exportPdf']);
-            // Permissions management
-            Route::get('/permissions', [PermissionController::class, 'index']);
-            Route::get('/hrs', [HrController::class, 'index']);
-            Route::get('/hrs/{id}/permissions', [HrController::class, 'getPermissions']);
-            Route::post('/hrs/{id}/permissions', [HrController::class, 'updatePermissions']);
-            Route::get('/hrs-with-permissions', [HrController::class, 'listWithPermissions']);
-            Route::get('/personal-data/{id}', [EmployeeProfileController::class, 'PersonalData']);
-            Route::get('/activity/{id}', [EmployeeProfileController::class, 'PersonalActivity']);
-            Route::patch('/personal-data/{id}', [EmployeeProfileController::class, 'update']);
-            // Settings
-            Route::get('/settings', [SettingController::class, 'index']);
-            Route::post('/settings', [SettingController::class, 'store']);
-            Route::delete('/settings', [SettingController::class, 'destroy']);
-            Route::apiResource('salary-methods', SalaryMethodController::class);  
-        });
+    
+    Route::get(
+        '/graph',
+        [GeneralController::class, 'getLastMonthAttendanceSummary']
+    );
+});
   
 
 
@@ -211,14 +199,8 @@ Route::prefix('hr/v1')->group(function () {
 //             Route::get('countries', [LocationController::class, 'countries']);
 //             Route::get('countries/{country}/governorates', [LocationController::class, 'governorates']);
 
-//             // Formal occasions
-//             Route::apiResource('formal-occasions', FormalOccasionController::class)
-//                 ->middleware([
-//                     'index' => 'permission:view_formal_occasions',
-//                     'store' => 'permission:add_formal_occasion',
-//                     'update' => 'permission:edit_formal_occasion',
-//                     'destroy' => 'permission:delete_formal_occasion',
-//                 ]);
+//            
+//            
 //             Route::get('/list', [EmployeeController::class, 'simpleList']);
 //             Route::get('/header', [EmployeeController::class, 'header']);
 //             // Employees
@@ -312,27 +294,16 @@ Route::prefix('hr/v1')->group(function () {
 //             Route::get('/attendance-export-pdf', [AttendanceSheetController::class, 'exportPdf'])
 //                 ->middleware('permission:export_attendance_pdf');
 
-//             // Permissions management
-//             Route::get('/permissions', [PermissionController::class, 'index'])
-//                 ->middleware('permission:view_permissions');
-
-//             Route::get('/hrs', [HrController::class, 'index'])
-//                 ->middleware('permission:view_hr');
-
-//             Route::get('/hrs/{id}/permissions', [HrController::class, 'getPermissions'])
-//                 ->middleware('permission:view_hr_permissions');
-
-//             Route::post('/hrs/{id}/permissions', [HrController::class, 'updatePermissions'])
-//                 ->middleware('permission:update_hr_permissions');
-
-//             Route::get('/hrs-with-permissions', [HrController::class, 'listWithPermissions'])
-//                 ->middleware('permission:view_hr_with_permissions');
+//            
+//           
 
 //             Route::get('/personal-data/{id}', [EmployeeProfileController::class, 'PersonalData']);
 //             Route::get('/activity/{id}', [EmployeeProfileController::class, 'PersonalActivity']);
 //             Route::patch('/personal-data/{id}', [EmployeeProfileController::class, 'update']);
 
+    //                 Route::get('/attendance/daily-summary-cards', [GeneralController::class, 'getDailySummaryCards']);
 
+    //  Route::get('/graph',[GeneralController::class, 'getLastMonthAttendanceSummary'] );
 
 
 //             // Settings
@@ -345,7 +316,7 @@ Route::prefix('hr/v1')->group(function () {
 
 //             Route::apiResource('salary-methods', SalaryMethodController::class);
 
-//             // routes/api.php
+//           // routes/api.php
 
 
 //         });

@@ -28,7 +28,7 @@ class AbsentSheetController extends Controller
     $start = Carbon::parse($month)->startOfMonth();
     $end   = Carbon::parse($month)->endOfMonth();
 
-    // 1️⃣ أيام الغياب
+    
     $absentDays = Attendance::where('employee_id', $employeeId)
         ->whereBetween('date', [$start, $end])
         ->where('status', 'absent')
@@ -42,7 +42,7 @@ class AbsentSheetController extends Controller
         ->values(); 
 
 
-    // 2️⃣ الإجازات من جدول leaves
+    // 
     $leaves = Leave::where('employee_id', $employeeId)
         ->where('status', 'approved')
         ->where(function ($q) use ($start, $end) {
@@ -65,10 +65,10 @@ class AbsentSheetController extends Controller
 
             return $dates;
         })
-        ->values(); // <- مهم جداً
+        ->values(); 
 
 
-    // 🟣 الدمج بدون أخطاء
+    // 
     $merged = collect($absentDays)
         ->merge($leaves)
         ->sortBy('date')
@@ -96,7 +96,7 @@ public function exportPdf(Request $request)
     $start = Carbon::parse($month)->startOfMonth();
     $end   = Carbon::parse($month)->endOfMonth();
 
-    // إعادة استخدام الكود اللي عندك للغياب والإجازات
+   
     $absentDays = Attendance::where('employee_id', $employeeId)
         ->whereBetween('date', [$start, $end])
         ->where('status', 'absent')
@@ -130,7 +130,7 @@ public function exportPdf(Request $request)
 
     $employee = Employee::with('applicant')->find($employeeId);    
     $name=$employee->applicant->first_name . ' ' . $employee->applicant->last_name;
-    // توليد PDF
+   
     $pdf = Pdf::loadView('sheets.absent_sheet', [
         'employeeName' => $name,
         'month'    => $month,
@@ -138,11 +138,10 @@ public function exportPdf(Request $request)
         'sheet'      => $merged
     ]);
 
-    // ممكن ترجعيه مباشرة للتحميل
+   
   return $pdf->download("Absent_Sheet_{$employeeId}_{$month}.pdf");
 
-    // أو ترجعيه ك base64 لو الفرونت بحاجة يعرضه مباشرة:
-    // return response()->json(['pdf' => base64_encode($pdf->output())]);
+  
 }
 
 }

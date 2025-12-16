@@ -21,7 +21,7 @@ class IncompleteShiftSheetController extends Controller
         return response()->json(['error' => 'employee_id and month are required'], 422);
     }
 
-    // نجيب الموظف مع الشيفت فقط
+    
     $employee = Employee::with('shift')->find($employeeId);
     if (!$employee) {
         return response()->json(['error' => 'Employee not found'], 404);
@@ -39,8 +39,8 @@ class IncompleteShiftSheetController extends Controller
             return [
                  'id'               => $r->id,  
                 'date'           => $r->date,
-                'start_shift_time' => $shift?->start_time,   //
-                'check_in'      => $r->check_in,       //
+                'start_shift_time' => $shift?->start_time,   
+                'check_in'      => $r->check_in,       
                 'difference'       => $r->late_minutes,
                 
             ];
@@ -62,7 +62,7 @@ public function update(Request $request, $id)
         return response()->json(['status' => false, 'message' => 'Attendance not found'], 404);
     }
 
-    // التحديث المسموح فقط
+   
     $attendance->update($request->only([
         'check_in',
         'check_out',
@@ -108,7 +108,7 @@ public function exportPdf(Request $request)
         return response()->json(['error' => 'employee_id and month are required'], 422);
     }
 
-    // جلب الموظف مع الشيفت
+    
     $employee = Employee::with('shift')->find($employeeId);
     if (!$employee) {
         return response()->json(['error' => 'Employee not found'], 404);
@@ -116,7 +116,7 @@ public function exportPdf(Request $request)
 
     $shift = $employee->shift;
 
-    // جلب أيام الـ late للشهر
+  
     $records = Attendance::where('employee_id', $employeeId)
         ->whereMonth('date', Carbon::parse($month)->month)
         ->where('late_minutes', '>', 0)
@@ -130,7 +130,7 @@ public function exportPdf(Request $request)
             ];
         });
 
-    // توليد PDF
+    
     $pdf = Pdf::loadView('sheets.late_sheet', [
         'employee' => $employee,
         'month'    => $month,

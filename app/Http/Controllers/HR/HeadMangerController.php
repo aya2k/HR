@@ -58,7 +58,7 @@ class HeadMangerController extends Controller
         ], 404);
     }
 
-    // 1) Reset لكل أنواع الإدارة
+   
     $employee->update([
         'is_manager' => false,
         'is_department_manager' => false,
@@ -68,9 +68,9 @@ class HeadMangerController extends Controller
         'managed_branch_id' => null,
     ]);
 
-    // 2) تحديد نوع المدير
+    
     $updateData = [
-        'is_manager' => true, // أي مدير لازم يكون مدير عام
+        'is_manager' => true, 
     ];
 
     if ($request->manager_type == 'department_manager') {
@@ -109,7 +109,7 @@ public function removeManager($id)
         ], 404);
     }
 
-    // Reset كل أنواع الإدارة
+    
     $employee->update([
         'is_manager' => false,
         'is_department_manager' => false,

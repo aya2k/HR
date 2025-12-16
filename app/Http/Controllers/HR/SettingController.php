@@ -15,7 +15,7 @@ class SettingController extends Controller
         return response()->json($setting);
     }
 
-    // ✅ حفظ أو تحديث اللوجو
+    
     public function store(Request $request)
     {
         $request->validate([
@@ -37,7 +37,7 @@ class SettingController extends Controller
         ]);
     }
 
-    // ✅ حذف اللوجو
+    
     public function destroy()
     {
         $setting = Setting::first();

@@ -13,116 +13,7 @@ use App\Models\AttendanceDay;
 class OverTimeSheetController extends Controller
 {
 
-    // public function index(Request $request)
-    // {
-    //     $employeeId = $request->employee_id;
-    //     $month      = $request->month;
-
-    //     if (!$employeeId || !$month) {
-    //         return response()->json(['error' => 'employee_id and month are required'], 422);
-    //     }
-
-    //     // نجيب الموظف مع الشيفت فقط
-    //     $employee = Employee::with('shift')->find($employeeId);
-    //     if (!$employee) {
-    //         return response()->json(['error' => 'Employee not found'], 404);
-    //     }
-
-    //     $shift = $employee->shift; // فيه end_time جاهز
-
-    //     // نجيب الايام اللي فيها اوفر تايم من جدول attendances مباشرة
-    //     $overtime = Attendance::where('employee_id', $employeeId)
-    //         ->whereMonth('date', Carbon::parse($month)->month)
-    //         ->where('overtime_minutes', '>', 0)
-    //         ->get()
-    //         ->map(function ($r) use ($shift) {
-
-    //             return [
-    //                 'id'             => $r->id,
-    //                 'date'           => $r->date,
-    //                 'end_shift_time' => $shift?->end_time,
-    //                 'check_in'      => $r->check_in, // ====> SELECT فقط من جدول الشيفت
-    //                 'check_out'      => $r->check_out,       // ====> SELECT مباشرة من attendance
-    //                 'overtime'       => $r->overtime_minutes,
-
-    //             ];
-    //         });
-
-    //     return response()->json([
-    //         'employee_id' => $employeeId,
-    //         'month'       => $month,
-    //         'overtime'    => $overtime->values(),
-    //     ]);
-    // }
-
-
-    // public function index(Request $request)
-    // {
-    //     $employeeId = $request->employee_id;
-    //     $month      = $request->month;
-
-    //     if (!$employeeId || !$month) {
-    //         return response()->json(['error' => 'employee_id and month are required'], 422);
-    //     }
-
-    //     $employee = Employee::find($employeeId);
-    //     if (!$employee) {
-    //         return response()->json(['error' => 'Employee not found'], 404);
-    //     }
-
-    //     $employmentType = $employee->shift?->name_en;   // full_time | part_time
-    //     $partTimeType   = $employee->part_time_type;    // hours | days
-
-    //     $isFullTime     = $employmentType === 'full_time';
-    //     $isPT_Hours     = $employmentType === 'part_time' && $partTimeType === 'hours';
-    //     $isPT_Days      = $employmentType === 'part_time' && $partTimeType === 'days';
-
-    //     $tz = 'Africa/Cairo';
-
-    //     // نجيب الاوفر تايم من جدول attendance
-    //     $records = Attendance::where('employee_id', $employeeId)
-    //         ->whereMonth('date', Carbon::parse($month)->month)
-    //         ->where('overtime_minutes', '>', 0)
-    //         ->get();
-
-    //     $overtime = $records->map(function ($r) use ($employee, $isFullTime, $isPT_Days, $isPT_Hours, $tz) {
-
-    //         $date = Carbon::parse($r->date, $tz);
-    //         $dayName = $date->format('l'); // Monday, Tuesday ...
-
-    //         $endShiftTime = null;
-
-    //         if ($isFullTime || $isPT_Days) {
-
-    //             // 🟦 weekly work days موجودة جوة جدول الموظفين
-    //             $days = $employee->days ?? [];
-
-    //             $todayShift = collect($days)->firstWhere('day', $dayName);
-
-    //             if ($todayShift) {
-    //                 $endShiftTime = $todayShift['end_time'] ?? null;
-    //             }
-    //         } elseif ($isPT_Hours) {
-    //             // Part time hours → مفيش اى end_time ثابت
-    //             $endShiftTime = null;
-    //         }
-
-    //         return [
-    //             'id'             => $r->id,
-    //             'date'           => $r->date,
-    //             'end_shift_time' => $endShiftTime,   // ← تم التعديل
-    //             'check_in'       => $r->check_in,
-    //             'check_out'      => $r->check_out,
-    //             'overtime'       => $r->overtime_minutes,
-    //         ];
-    //     });
-
-    //     return response()->json([
-    //         'employee_id' => $employeeId,
-    //         'month'       => $month,
-    //         'overtime'    => $overtime->values(),
-    //     ]);
-    // }
+   
 
    public function index(Request $request)
 {
@@ -159,7 +50,7 @@ class OverTimeSheetController extends Controller
     if ($isPT_Hours) {
         $requiredMonthlyMinutes = (float)($employee->monthly_hours_required ?? 0) * 60;
 
-        // لو required مش متحدد
+        
         if ($requiredMonthlyMinutes <= 0) {
             return response()->json([
                 'error' => 'monthly_hours_required not configured for this employee'
@@ -208,7 +99,7 @@ class OverTimeSheetController extends Controller
         $dailyRequiredMinutes = null;
         $endShiftTime = null;
 
-        // الأفضل: اقرأ من workDays table لو موجود
+      
         $wd = $employee->workDays
             ? $employee->workDays->first(fn($d) => strtolower($d->day ?? '') === $dayName)
             : null;
@@ -228,7 +119,7 @@ class OverTimeSheetController extends Controller
                 $dailyRequiredMinutes = $start->diffInMinutes($end);
                 $endShiftTime = '17:00';
             } elseif ($isPT_Days) {
-                // لو PT days ومفيش schedule لليوم ده => ماينفعش نحسب overtime عليه (بدون required)
+               
                 return null;
             }
         }
@@ -311,7 +202,7 @@ class OverTimeSheetController extends Controller
             return response()->json(['error' => 'employee_id and month are required'], 422);
         }
 
-        // جلب بيانات الموظف مع الشيفت
+      
         $employee = Employee::with('shift')->find($employeeId);
         if (!$employee) {
             return response()->json(['error' => 'Employee not found'], 404);
@@ -319,7 +210,7 @@ class OverTimeSheetController extends Controller
 
         $shift = $employee->shift;
 
-        // جلب أيام الأوفر تايم للشهر
+       
         $records = Attendance::where('employee_id', $employeeId)
             ->whereMonth('date', Carbon::parse($month)->month)
             ->where('overtime_minutes', '>', 0)
@@ -333,7 +224,7 @@ class OverTimeSheetController extends Controller
                 ];
             });
 
-        // توليد PDF
+       
         $pdf = Pdf::loadView('sheets.overtime_sheet', [
             'employee' => $employee,
             'month'    => $month,
@@ -355,15 +246,15 @@ class OverTimeSheetController extends Controller
             return response()->json(['error' => 'employee_id and month are required'], 422);
         }
 
-        // نجيب الموظف مع الشيفت فقط
+        
         $employee = Employee::with('shift')->find($employeeId);
         if (!$employee) {
             return response()->json(['error' => 'Employee not found'], 404);
         }
 
-        $shift = $employee->shift; // فيه end_time جاهز
+        $shift = $employee->shift;
 
-        // نجيب الايام اللي فيها اوفر تايم من جدول attendances مباشرة
+        
         $overtime = Attendance::where('employee_id', $employeeId)
             ->whereMonth('date', Carbon::parse($month)->month)
             ->where('overtime_minutes', '>', 0)
@@ -374,8 +265,8 @@ class OverTimeSheetController extends Controller
                     'id'             => $r->id,
                     'date'           => $r->date,
                     'end_shift_time' => $shift?->end_time,
-                    'check_in'      => $r->check_in, // ====> SELECT فقط من جدول الشيفت
-                    'check_out'      => $r->check_out,       // ====> SELECT مباشرة من attendance
+                    'check_in'      => $r->check_in, 
+                    'check_out'      => $r->check_out,       
                     'overtime'       => $r->overtime_minutes,
 
                 ];

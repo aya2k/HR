@@ -22,15 +22,15 @@ class AttendanceSheetController extends Controller
             return response()->json(['error' => 'employee_id and month are required'], 422);
         }
 
-        // نجيب الموظف مع الشيفت فقط
+       
         $employee = Employee::find($employeeId);
         if (!$employee) {
             return response()->json(['error' => 'Employee not found'], 404);
         }
 
-        $shift = $employee->shift; // فيه end_time جاهز
+        $shift = $employee->shift; 
 
-        // نجيب الايام اللي فيها اوفر تايم من جدول attendances مباشرة
+       
         $overtime = Attendance::where('employee_id', $employeeId)
             ->whereMonth('date', Carbon::parse($month)->month)
             ->whereNot('status', 'absent')
@@ -65,14 +65,14 @@ class AttendanceSheetController extends Controller
         $attendance->update($request->only(['check_in', 'check_out', 'status']));
 
 
-        // بعد تحديث attendance
+      
         if ($attendance->date) {
             $day = AttendanceDay::where('employee_id', $attendance->employee_id)
                 ->where('work_date', $attendance->date)
                 ->first();
 
             if ($day) {
-                // احسبي من جديد
+               
                 $checkIn  = $attendance->check_in ? Carbon::parse($attendance->check_in) : null;
                 $checkOut = $attendance->check_out ? Carbon::parse($attendance->check_out) : null;
 
@@ -122,7 +122,7 @@ class AttendanceSheetController extends Controller
             return response()->json(['error' => 'employee_id and month are required'], 422);
         }
 
-        // جلب بيانات الموظف مع الشيفت
+       
         $employee = Employee::find($employeeId);
         if (!$employee) {
             return response()->json(['error' => 'Employee not found'], 404);
@@ -130,7 +130,7 @@ class AttendanceSheetController extends Controller
 
         $shift = $employee->shift;
 
-        // جلب الحضور للشهر
+       
         $records = Attendance::where('employee_id', $employeeId)
             ->whereMonth('date', Carbon::parse($month)->month)
             ->whereNot('status', 'absent')
@@ -143,7 +143,7 @@ class AttendanceSheetController extends Controller
                 ];
             });
 
-        // توليد PDF
+        
         $pdf = Pdf::loadView('sheets.attendance_sheet', [
             'employee' => $employee,
             'month'    => $month,

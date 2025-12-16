@@ -25,7 +25,7 @@ class FormalOccasionController extends Controller
             'date_to' => 'required|date|after_or_equal:date_from',
         ]);
 
-        // نحسب المدة تلقائيًا
+       
         $validated['duration'] = now()->parse($validated['date_from'])->diffInDays(now()->parse($validated['date_to'])) + 1;
 
         $occasion = FormalOccasion::create($validated);

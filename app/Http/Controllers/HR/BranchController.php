@@ -27,23 +27,23 @@ class BranchController extends Controller
      */
    public function store(StoreBranchRequest $request)
 {
-    // 1. هات كل الأسماء الموجودة في جدول الفروع
+    
     $existingNames = Branch::pluck('name_en')->toArray();
 
-    // 2. Escape عشان سلامة الـ regex
+    
     $escapedNames = array_map(function($name) {
         return preg_quote($name, '/');
     }, $existingNames);
 
-    // 3. بناء regex يمنع التطابق الكامل مع أي اسم موجود (case-insensitive)
+   
     $regex = '/^(?!(' . implode('|', $escapedNames) . ')$).+$/i';
 
-    // 4. Validation manual لأن StoreBranchRequest ما بتدعم regex dynamic
+   
     $validated = $request->validate([
         'name_en' => ["required", "string", "max:255", "regex:$regex"],
     ]);
 
-    // 5. إنشاء الفرع
+    
     $branch = Branch::create([
         'company_id' => 1,
         'name_en' => $validated['name_en'],

@@ -16,7 +16,7 @@ class DepartmentController extends Controller
         ]);
     }
 
-    // إنشاء قسم جديد
+   
    public function store(Request $request)
 {
    
@@ -54,7 +54,7 @@ class DepartmentController extends Controller
 }
 
 
-    // عرض قسم معين
+  
     public function show($id)
     {
         $department = Department::with('company', 'manager', 'employees')->findOrFail($id);
@@ -65,7 +65,7 @@ class DepartmentController extends Controller
         ]);
     }
 
-    // تحديث القسم
+   
     public function update(Request $request, $id)
     {
         $department = Department::findOrFail($id);
@@ -87,7 +87,7 @@ class DepartmentController extends Controller
         ]);
     }
 
-    // حذف القسم
+  
     public function destroy($id)
     {
         $department = Department::findOrFail($id);

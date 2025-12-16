@@ -95,10 +95,10 @@ class StoreEmployeeRequest extends FormRequest
             'position_applied_for_id' => 'required|integer|exists:positions,id',
             'employee.employment_type_id' => 'nullable|integer|exists:shifts,id',
             'employee.part_time_type' => 'required_if:employee.employment_type,part_time|in:hours,days',
-            // لو ساعات
+          
             'employee.total_hours' => 'nullable|integer',
 
-            // لو أيام
+           
             'employee.days' => 'array',
             'employee.days.*.day' => 'string',
             'employee.days.*.start_time' => 'date_format:H:i',

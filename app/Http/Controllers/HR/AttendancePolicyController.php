@@ -29,7 +29,7 @@ class AttendancePolicyController extends Controller
 
         foreach ($hourFields as $field) {
             if (!empty($data[$field])) {
-                $data[$field] = $data[$field] * 60; // تحويل الساعات إلى دقائق
+                $data[$field] = $data[$field] * 60; 
             }
         }
 

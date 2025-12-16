@@ -13,7 +13,7 @@ class RoleController extends Controller
         return Role::with('permissions')->get();
     }
 
-    // إنشاء Role جديد
+    
     public function store(Request $request)
     {
         $request->validate([
@@ -30,7 +30,7 @@ class RoleController extends Controller
         return response()->json($role->load('permissions'));
     }
 
-    // تعديل Role وصلاحياته
+    
     public function update(Request $request, Role $role)
     {
         $role->update(['name' => $request->name]);

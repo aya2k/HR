@@ -28,36 +28,36 @@ class EmployeeProfileController extends Controller
 
     public function PersonalData($id)
     {
-        // جلب بيانات الموظف
+        
         $employee = Employee::with(['applicant', 'department', 'position', 'branches', 'company'])
             ->findOrFail($id);
 
-        // الشهر والسنة الحاليين
+       
         $currentMonth = now()->month;
         $currentYear  = now()->year;
 
-        // جلب سجلات الحضور والانصراف للموظف خلال الشهر الحالي فقط
+       
         $employeeRecords = Attendance::where('employee_id', $id)
             ->whereMonth('date', $currentMonth)
             ->whereYear('date', $currentYear)
             ->get();
 
-        // حساب الحضور
+      
         $presentDays = $employeeRecords
             ->whereNotIn('day_type', ['absent', 'leave'])
             ->count();
 
-        // حساب الغياب
+        
         $absentDays = $employeeRecords
             ->where('day_type', 'absent')
             ->count();
 
-        // إجمالي التأخير في الشهر الحالي (Late + Early Leave)
+      
         $totalLate = $employeeRecords->sum(function ($record) {
             return ($record->late_minutes ?? 0) + ($record->early_leave_minutes ?? 0);
         });
 
-        // إرجاع البيانات داخل Resource
+       
         return response()->json(
             new EmployeeProfileResource($employee, [
                 'present_days' => $presentDays,
@@ -75,17 +75,17 @@ class EmployeeProfileController extends Controller
         $currentMonth = now($tz)->month;
         $currentYear  = now($tz)->year;
 
-        // جلب الحضور للشهر الحالي للموظف
+        
         $attendances = AttendanceDay::where('employee_id', $employee->id)
             ->whereYear('work_date', $currentYear)
             ->whereMonth('work_date', $currentMonth)
             ->orderBy('work_date', 'asc')
             ->get();
 
-        // تجهيز بيانات كل يوم مع status منفصل
+      
         $attendanceDetails = $attendances->map(function ($item) use ($tz) {
 
-            // حساب حالة اليوم
+           
             $dailyStatus = [];
 
             if ($item->late_minutes > 0) {
@@ -100,7 +100,7 @@ class EmployeeProfileController extends Controller
                 $dailyStatus[] = 'overtime';
             }
 
-            // لو مفيش أي مخالفة
+           
             if (empty($dailyStatus)) {
                 $dailyStatus[] = 'onTime';
             }
@@ -237,7 +237,7 @@ class EmployeeProfileController extends Controller
         if ($request->has('employee')) {
             $employeeData = $request->input('employee');
 
-            // ⚡ Logic: إذا بعتي weekly_work_days يبقى monthly_hours_required = null والعكس صحيح
+           
             if (!empty($employeeData['weekly_work_days'])) {
                 $employeeData['monthly_hours_required'] = null;
             } elseif (!empty($employeeData['monthly_hours_required'])) {
@@ -277,7 +277,7 @@ class EmployeeProfileController extends Controller
 
     /**
 
-     * حساب مدة العقد بين join_date و end_date
+     * join_date و end_date
      */
     protected function calculateContractDuration(array $employeeData): ?string
     {
