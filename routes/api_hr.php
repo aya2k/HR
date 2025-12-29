@@ -30,6 +30,16 @@ use App\Http\Controllers\HR\EmployeeProfileController;
 use App\Http\Controllers\ZKAttendanceController;
 use App\Http\Controllers\HR\SalaryMethodController;
 use App\Http\Controllers\HR\GeneralController;
+use App\Http\Controllers\HR\RewardController;
+use App\Http\Controllers\HR\PenaltyController;
+use App\Http\Controllers\HR\LeaveController;
+use App\Http\Controllers\HR\HolidayController;
+use App\Http\Controllers\HR\RemotelyEmployeeController;
+use App\Http\Controllers\HR\OvertimeController;
+use App\Http\Controllers\HR\LoanController;
+use App\Http\Controllers\HR\ResignationController;
+use App\Http\Controllers\HR\BranchTransferController;
+use App\Http\Controllers\HR\EmployeeKpiController;
 
 
 
@@ -61,7 +71,7 @@ Route::prefix('hr/v1')->group(function () {
     Route::get('countries/{country}/governorates', [LocationController::class, 'governorates']);
 
     // Formal occasions
-   
+
     Route::get('/list', [EmployeeController::class, 'simpleList']);
     Route::get('/header', [EmployeeController::class, 'header']);
     // Employees
@@ -106,7 +116,7 @@ Route::prefix('hr/v1')->group(function () {
     Route::delete('attendances-sheet/{id}', [AttendanceSheetController::class, 'delete']);
     Route::get('/attendance-export-pdf', [AttendanceSheetController::class, 'exportPdf']);
     // Permissions management
-   
+
     Route::get('/personal-data/{id}', [EmployeeProfileController::class, 'PersonalData']);
     Route::get('/activity/{id}', [EmployeeProfileController::class, 'PersonalActivity']);
     Route::patch('/personal-data/{id}', [EmployeeProfileController::class, 'update']);
@@ -121,16 +131,50 @@ Route::prefix('hr/v1')->group(function () {
         [GeneralController::class, 'getDailySummaryCards']
     );
 
+
+
+    Route::get('/graph', [GeneralController::class, 'getLastMonthAttendanceSummary']);
+
+
+    /////////////////////////v2
+
+    Route::get('reward-summary', [RewardController::class, 'rewardsSummary']);
+    Route::apiResource('rewards', RewardController::class);
+
+    Route::get('penalty-summary', [PenaltyController::class, 'penaltiesSummary']);
+    Route::apiResource('penalties', PenaltyController::class);
+
+    Route::get('leaves-summary', [LeaveController::class, 'leavesSummary']);
+    Route::apiResource('leaves', LeaveController::class);          ////leavesSummary
+
+
+    Route::get('holidays-summary', [HolidayController::class, 'holidaysSummary']);
+    Route::get('general-holidays/{year}', [HolidayController::class, 'egyptHolidays']);
+    Route::apiResource('holidays', HolidayController::class);
     
-    Route::get(
-        '/graph',
-        [GeneralController::class, 'getLastMonthAttendanceSummary']
-    );
+
+    Route::get('remotely-summary', [RemotelyEmployeeController::class, 'remotelySummary']);
+    Route::apiResource('remotely', RemotelyEmployeeController::class);
+
+    Route::get('overtime-summary', [OvertimeController::class, 'overtimeSummary']);
+    Route::apiResource('overtime', OvertimeController::class);
+
+    Route::get('loans-summary', [LoanController::class, 'loansSummary']);
+    Route::apiResource('loans', LoanController::class);
+
+    Route::get('resignations-summary', [ResignationController::class, 'resignationsSummary']);
+    Route::apiResource('resignations', ResignationController::class);
+
+    Route::get('branch-transfers-summary', [BranchTransferController::class, 'branchTransfersSummary']);
+    Route::apiResource('branch-transfers', BranchTransferController::class);
+
+
+  //  bulkUpsert    EmployeeKpiController
+
+    Route::post('add-kpi', [EmployeeKpiController::class, 'bulkUpsert']);
+
+    
 });
-  
-
-
-   
 
 
 
@@ -259,7 +303,7 @@ Route::prefix('hr/v1')->group(function () {
 
 
 //             Route::get('/header/{day}', [AttendanceController::class, 'header']);
-
+                   
 
 //             // Sheets
 //             Route::post('absents', [AbsentSheetController::class, 'index'])
@@ -315,7 +359,7 @@ Route::prefix('hr/v1')->group(function () {
 //                 ->middleware('permission:delete_setting');
 
 //             Route::apiResource('salary-methods', SalaryMethodController::class);
-
+               
 //           // routes/api.php
 
 

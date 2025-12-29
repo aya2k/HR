@@ -12,9 +12,9 @@ class Employee extends Model
 
     protected $guarded = [];
     protected $casts = [
-    'salary_details' => 'array',
-    'contracts' => 'array',
-];
+        'salary_details' => 'array',
+        'contracts' => 'array',
+    ];
 
 
     // Applicant
@@ -31,21 +31,21 @@ class Employee extends Model
 
 
     public function workDays()
-{
-    return $this->hasMany(EmployeeWorkDay::class);
-}
+    {
+        return $this->hasMany(EmployeeWorkDay::class);
+    }
 
-    
 
-public function managedDepartment()
-{
-    return $this->belongsTo(Department::class, 'managed_department_id');
-}
 
-public function managedBranch()
-{
-    return $this->belongsTo(Branch::class, 'managed_branch_id');
-}
+    public function managedDepartment()
+    {
+        return $this->belongsTo(Department::class, 'managed_department_id');
+    }
+
+    public function managedBranch()
+    {
+        return $this->belongsTo(Branch::class, 'managed_branch_id');
+    }
 
 
 
@@ -82,7 +82,7 @@ public function managedBranch()
     // Shift
     public function shift()
     {
-        return $this->belongsTo(Shift::class , 'shift_id');
+        return $this->belongsTo(Shift::class, 'shift_id');
     }
 
     // Experiences through applicant
@@ -137,11 +137,11 @@ public function managedBranch()
     }
 
     public function attendanceDays()
-{
-    return $this->hasMany(AttendanceDay::class);
-}
+    {
+        return $this->hasMany(AttendanceDay::class);
+    }
 
-public function contracts()
+    public function contracts()
     {
         return $this->hasMany(EmployeeContract::class);
     }
@@ -149,5 +149,10 @@ public function contracts()
     public function salaryDetails()
     {
         return $this->hasMany(EmployeeSalaryDetail::class);
+    }
+
+    public function kpis()
+    {
+        return $this->hasMany(EmployeeKpi::class);
     }
 }
