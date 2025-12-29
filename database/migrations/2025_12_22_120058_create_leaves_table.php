@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('holidays', function (Blueprint $table) {
+        Schema::create('leaves', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
             $table->date('date');
@@ -21,9 +21,6 @@ return new class extends Migration
             $table->boolean('has_replacement')->default(false);
             $table->foreignId('replaced_employee_id')->nullable()->constrained('employees')->nullOnDelete();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
-            $table->text('reason')->nullable();
-            $table->json('images')->nullable(); // Array of images
-            $table->json('pdf')->nullable(); // Array of PDFs
             $table->timestamps();
         });
     }
@@ -33,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('holidays');
+        Schema::dropIfExists('leaves');
     }
 };
